@@ -1,0 +1,119 @@
+{
+  "" : {
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetExtension-primary.dia",
+    "emit-module-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetExtension-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetExtension-primary-emit-module.dia",
+    "pch" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetExtension-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetExtension-primary.swiftdeps"
+  },
+  "/Users/mycode/To-Do Duck/To-Do Duck/Design/DesignSystem.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DesignSystem.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DesignSystem.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DesignSystem.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DesignSystem.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DesignSystem.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DesignSystem.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DesignSystem.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DesignSystem~partial.swiftmodule"
+  },
+  "/Users/mycode/To-Do Duck/To-Do Duck/Models/DailyCard.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DailyCard.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DailyCard.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DailyCard.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DailyCard.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DailyCard.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DailyCard.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DailyCard.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/DailyCard~partial.swiftmodule"
+  },
+  "/Users/mycode/To-Do Duck/To-Do Duck/Models/MemoCard.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/MemoCard.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/MemoCard.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/MemoCard.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/MemoCard.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/MemoCard.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/MemoCard.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/MemoCard.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/MemoCard~partial.swiftmodule"
+  },
+  "/Users/mycode/To-Do Duck/To-Do Duck/Models/TodoItem.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoItem.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoItem.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoItem.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoItem.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoItem.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoItem.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoItem.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoItem~partial.swiftmodule"
+  },
+  "/Users/mycode/To-Do Duck/TodoWidget/AppIntent.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/AppIntent.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/AppIntent.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/AppIntent.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/AppIntent.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/AppIntent.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/AppIntent.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/AppIntent.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/AppIntent~partial.swiftmodule"
+  },
+  "/Users/mycode/To-Do Duck/TodoWidget/Provider.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/Provider.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/Provider.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/Provider.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/Provider.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/Provider.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/Provider.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/Provider.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/Provider~partial.swiftmodule"
+  },
+  "/Users/mycode/To-Do Duck/TodoWidget/TodoWidget.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidget.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidget.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidget.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidget.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidget.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidget.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidget.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidget~partial.swiftmodule"
+  },
+  "/Users/mycode/To-Do Duck/TodoWidget/TodoWidgetBundle.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetBundle.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetBundle.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetBundle.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetBundle.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetBundle.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetBundle.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetBundle.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetBundle~partial.swiftmodule"
+  },
+  "/Users/mycode/To-Do Duck/TodoWidget/TodoWidgetLiveActivity.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetLiveActivity.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetLiveActivity.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetLiveActivity.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetLiveActivity.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetLiveActivity.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetLiveActivity.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetLiveActivity.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/TodoWidgetLiveActivity~partial.swiftmodule"
+  },
+  "/Users/mycode/To-Do Duck/TodoWidget/WidgetView.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/WidgetView.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/WidgetView.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/WidgetView.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/WidgetView.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/WidgetView.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/WidgetView.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/WidgetView.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/WidgetView~partial.swiftmodule"
+  },
+  "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/mycode/To-Do Duck/build/To-Do Duck.build/Debug/TodoWidgetExtension.build/Objects-normal/x86_64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

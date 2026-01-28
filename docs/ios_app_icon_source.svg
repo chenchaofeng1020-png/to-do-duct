@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <!-- 背景 -->
+    <rect x="0" y="0" width="1024" height="1024" fill="#FFFFFF"/>
+    
+    <!-- 鸭头 (水平翻转) -->
+    <!-- Center x: 0.6 * 1024 = 614.4 -->
+    <circle cx="614.4" cy="358.4" r="281.6" fill="#FFD54F"/>
+    
+    <!-- 嘴巴 (朝左) -->
+    <!-- 
+       Center (389.12, 389.12)
+       Rotation -12 deg
+    -->
+    <g transform="rotate(-12, 389.12, 389.12)">
+        <rect x="235.52" y="296.96" width="307.2" height="184.32" rx="92.16" fill="#FFA726"/>
+    </g>
+    
+    <!-- 眼睛 (水平翻转) -->
+    <!-- Center x: 0.55 * 1024 = 563.2 -->
+    <circle cx="563.2" cy="327.68" r="30.72" fill="#000000" fill-opacity="0.8"/>
+    
+    <!-- 对勾 (保持不变) -->
+    <path d="M 358.4 614.4 Q 409.6 870.4 563.2 870.4 L 870.4 563.2" stroke="#673AB7" stroke-width="122.88" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

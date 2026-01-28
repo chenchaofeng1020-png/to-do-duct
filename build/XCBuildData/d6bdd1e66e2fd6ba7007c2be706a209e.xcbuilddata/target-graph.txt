@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'To-Do Duck' in project 'To-Do Duck'
+➜ Explicit dependency on target 'TodoWidgetExtension' in project 'To-Do Duck'
+Target 'TodoWidgetExtension' in project 'To-Do Duck' (no dependencies)
