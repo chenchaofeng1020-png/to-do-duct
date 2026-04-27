@@ -26,27 +26,27 @@ enum DuckStatus: String {
 }
 
 struct Provider: TimelineProvider {
-    // 使用静态属性确保 ModelContainer 只初始化一次
     @MainActor
     static let sharedModelContainer: ModelContainer? = {
         let schema = Schema([
             DailyCardV3.self,
             TodoItemV3.self,
             MemoCardV3.self,
+            RepeatRule.self,
         ])
         
-        // 读取共享设置，与主 App 保持一致
-        let defaults = UserDefaults(suiteName: "group.sdy.tododuck")
-        let isCloudSyncEnabled = defaults?.bool(forKey: "isCloudSyncEnabled") ?? false
-        // 关键修复：显式指定 CloudKit 容器 ID，防止歧义
-        let cloudKitMode: ModelConfiguration.CloudKitDatabase = isCloudSyncEnabled ? .private("iCloud.sdy.tododuck") : .none
-        
+        let groupDefaults = UserDefaults(suiteName: "group.sdy.tododuck")
+        let groupSync = groupDefaults?.bool(forKey: "isCloudSyncEnabled") ?? false
+        let standardSync = UserDefaults.standard.bool(forKey: "isCloudSyncEnabled")
+        let isCloudSyncEnabled = groupSync || standardSync
+        let cloudKitMode: ModelConfiguration.CloudKitDatabase = isCloudSyncEnabled ? .automatic : .none
+
         // 使用显式 URL 初始化，与主 App 保持一致
         let appGroupID = "group.sdy.tododuck"
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) else {
             return nil
         }
-        let storeURL = containerURL.appendingPathComponent("TodoDuckShared_v7.store")
+        let storeURL = containerURL.appendingPathComponent("TodoDuckShared_v9.store")
 
         let config = ModelConfiguration(
             url: storeURL,
@@ -57,8 +57,19 @@ struct Provider: TimelineProvider {
         do {
             return try ModelContainer(for: schema, configurations: config)
         } catch {
-            print("Error creating ModelContainer: \(error)")
-            return nil
+            print("Widget ModelContainer init failed: \(error)")
+
+            do {
+                let fallbackConfig = ModelConfiguration(
+                    url: storeURL,
+                    allowsSave: false,
+                    cloudKitDatabase: .none
+                )
+                return try ModelContainer(for: schema, configurations: fallbackConfig)
+            } catch {
+                print("Widget fallback ModelContainer init failed: \(error)")
+                return nil
+            }
         }
     }()
 
@@ -101,13 +112,16 @@ struct Provider: TimelineProvider {
         
         let today = Calendar.current.startOfDay(for: Date())
         let descriptor = FetchDescriptor<DailyCardV3>(
-            predicate: #Predicate { $0.date == today }
+            sortBy: [
+                SortDescriptor(\DailyCardV3.date, order: .reverse),
+                SortDescriptor(\DailyCardV3.createdAt, order: .reverse)
+            ]
         )
         
         do {
             let cards = try container.mainContext.fetch(descriptor)
-            if let todayCard = cards.first {
-                let items = todayCard.items
+            if let todayCard = cards.first(where: { Calendar.current.isDate($0.date, inSameDayAs: today) }) {
+                let items = todayCard.items ?? []
                 let total = items.count
                 let completed = items.filter { $0.isDone }.count
                 

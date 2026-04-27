@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>待办鸭 - 开启新的一天</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600&amp;display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-tertiary": "#f3ffc2",
+            "on-primary-fixed": "#004327",
+            "primary-container": "#94edb6",
+            "error-container": "#fa746f",
+            "on-tertiary-fixed": "#424c1d",
+            "tertiary-fixed": "#ebf7b7",
+            "on-secondary": "#e6ffee",
+            "surface-tint": "#036d42",
+            "secondary-container": "#b6efcd",
+            "surface-dim": "#d4dcd9",
+            "error-dim": "#67040d",
+            "on-primary-container": "#005934",
+            "primary-dim": "#006039",
+            "on-tertiary-fixed-variant": "#5f6937",
+            "tertiary-dim": "#4d5827",
+            "on-background": "#2d3432",
+            "inverse-surface": "#0b0f0e",
+            "surface-container-lowest": "#ffffff",
+            "on-error-container": "#6e0a12",
+            "inverse-primary": "#94edb6",
+            "primary": "#036d42",
+            "surface-container": "#eaefec",
+            "tertiary-fixed-dim": "#dde9aa",
+            "inverse-on-surface": "#9b9d9c",
+            "on-secondary-container": "#265b42",
+            "surface-variant": "#dde4e1",
+            "surface-container-highest": "#dde4e1",
+            "on-secondary-fixed": "#0f4830",
+            "on-surface": "#2d3432",
+            "on-primary": "#e7ffec",
+            "tertiary": "#596432",
+            "surface-container-low": "#f1f4f2",
+            "surface-container-high": "#e4e9e7",
+            "surface": "#f8faf8",
+            "on-tertiary-container": "#545f2d",
+            "background": "#f8faf8",
+            "tertiary-container": "#ebf7b7",
+            "secondary-fixed": "#b6efcd",
+            "outline": "#757c7a",
+            "error": "#a83836",
+            "secondary-dim": "#275d43",
+            "outline-variant": "#acb4b1",
+            "on-surface-variant": "#59615f",
+            "primary-fixed": "#94edb6",
+            "secondary-fixed-dim": "#a8e1c0",
+            "secondary": "#34694f",
+            "on-secondary-fixed-variant": "#30664b",
+            "on-error": "#fff7f6",
+            "on-primary-fixed-variant": "#00633b",
+            "surface-bright": "#f8faf8",
+            "primary-fixed-dim": "#86dea9"
+          },
+          fontFamily: {
+            "headline": ["Plus Jakarta Sans"],
+            "body": ["Manrope"],
+            "label": ["Manrope"]
+          },
+          borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      background-color: #f8faf8;
+      color: #2d3432;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen selection:bg-primary-container selection:text-on-primary-container">
+  <header class="bg-[#f8faf8]/80 dark:bg-stone-950/80 backdrop-blur-2xl sticky top-0 z-50">
+    <div class="flex justify-between items-center px-6 py-8 w-full max-w-7xl mx-auto">
+      <div class="flex items-center gap-4">
+        <h1 class="text-on-surface dark:text-white font-extrabold text-4xl tracking-tight">待办</h1>
+      </div>
+      <button
+        class="bg-primary hover:bg-primary-dim text-on-primary px-8 py-4 rounded-full font-extrabold text-lg shadow-lg transition-all active:scale-95">
+        + 新的一天
+      </button>
+    </div>
+  </header>
+  <main class="max-w-7xl mx-auto px-6 pt-4 pb-32">
+    <!-- Task Groups -->
+    <div class="space-y-12">
+      <!-- Group: Today -->
+      <section class="bg-surface-container-low rounded-xl p-1">
+        <div class="flex items-baseline justify-between px-6 py-8">
+          <div class="flex items-baseline gap-4">
+            <h3 class="text-3xl font-extrabold text-on-surface tracking-tight">今天</h3>
+            <span class="text-on-surface-variant font-medium text-lg">10月24日 · 周四</span>
+          </div>
+          <span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full text-sm font-bold">3
+            待办</span>
+        </div>
+        <div class="space-y-3 px-4 pb-4">
+          <!-- Task Item 1 -->
+          <div
+            class="group flex items-center gap-4 p-5 bg-surface-container-lowest rounded-full hover:bg-surface-container-high transition-all cursor-pointer">
+            <div
+              class="w-7 h-7 rounded-full border-[3px] border-outline-variant flex items-center justify-center group-hover:border-primary transition-colors">
+              <div class="w-3 h-3 rounded-full bg-primary scale-0 group-hover:scale-100 transition-transform"></div>
+            </div>
+            <div class="flex-1">
+              <p class="text-on-surface text-lg font-semibold">完成 '待办鸭' UI 视觉走查</p>
+            </div>
+            <div class="opacity-0 group-hover:opacity-100 flex gap-2 transition-opacity">
+              <button class="p-2 hover:bg-surface-container-highest rounded-full text-on-surface-variant"><span
+                  class="material-symbols-outlined" data-icon="edit">edit</span></button>
+              <button class="p-2 hover:bg-surface-container-highest rounded-full text-error"><span
+                  class="material-symbols-outlined" data-icon="delete">delete</span></button>
+            </div>
+          </div>
+          <!-- Task Item 2 -->
+          <div
+            class="group flex items-center gap-4 p-5 bg-surface-container-lowest rounded-full hover:bg-surface-container-high transition-all cursor-pointer">
+            <div class="w-7 h-7 rounded-full border-[3px] border-primary bg-primary flex items-center justify-center">
+              <span class="material-symbols-outlined text-on-primary text-lg" data-icon="check">check</span>
+            </div>
+            <div class="flex-1">
+              <p class="text-on-surface-variant text-lg font-medium line-through">预订周五的团队午餐</p>
+            </div>
+          </div>
+          <!-- Task Item 3 -->
+          <div
+            class="group flex items-center gap-4 p-5 bg-surface-container-lowest rounded-full hover:bg-surface-container-high transition-all cursor-pointer">
+            <div
+              class="w-7 h-7 rounded-full border-[3px] border-outline-variant flex items-center justify-center group-hover:border-primary transition-colors">
+            </div>
+            <div class="flex-1">
+              <p class="text-on-surface text-lg font-semibold">整理 Q4 季度预算报告</p>
+            </div>
+          </div>
+          <!-- Input Field -->
+          <div class="mt-6 px-1">
+            <div class="relative flex items-center">
+              <span class="absolute left-4 material-symbols-outlined text-on-surface-variant" data-icon="add">add</span>
+              <input
+                class="w-full bg-surface-container-high/50 border-none focus:ring-2 focus:ring-primary rounded-full py-5 pl-12 pr-4 text-lg font-medium placeholder:text-on-surface-variant/60"
+                placeholder="输入待办后回车" type="text" />
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Group: Tomorrow -->
+      <section class="bg-surface-container-low rounded-xl p-1 opacity-80 hover:opacity-100 transition-opacity">
+        <div class="flex items-baseline justify-between px-6 py-8">
+          <div class="flex items-baseline gap-4">
+            <h3 class="text-3xl font-extrabold text-on-surface tracking-tight">明天</h3>
+            <span class="text-on-surface-variant font-medium text-lg">10月25日 · 周五</span>
+          </div>
+          <span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-sm font-bold">1
+            待办</span>
+        </div>
+        <div class="space-y-3 px-4 pb-4">
+          <div
+            class="group flex items-center gap-4 p-5 bg-surface-container-lowest rounded-full hover:bg-surface-container-high transition-all cursor-pointer">
+            <div class="w-7 h-7 rounded-full border-[3px] border-outline-variant flex items-center justify-center">
+            </div>
+            <div class="flex-1">
+              <p class="text-on-surface text-lg font-semibold">客户线上演示会议 (Project Lucid)</p>
+            </div>
+          </div>
+          <!-- Input Field -->
+          <div class="mt-6 px-1">
+            <div class="relative flex items-center">
+              <span class="absolute left-4 material-symbols-outlined text-on-surface-variant" data-icon="add">add</span>
+              <input
+                class="w-full bg-surface-container-high/50 border-none focus:ring-2 focus:ring-primary rounded-full py-5 pl-12 pr-4 text-lg font-medium placeholder:text-on-surface-variant/60"
+                placeholder="输入待办后回车" type="text" />
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <!-- BottomNavBar -->
+  <nav class="fixed bottom-8 left-0 w-full flex justify-center items-center z-50 px-4">
+    <div
+      class="bg-white/70 dark:bg-stone-900/70 backdrop-blur-3xl fixed bottom-8 left-1/2 -translate-x-1/2 w-[min(90%,420px)] rounded-full px-6 py-3 flex justify-between items-center shadow-[0_32px_64px_-12px_rgba(3,109,66,0.08)]">
+      <a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full w-12 h-12 active:scale-90 transition-transform duration-200"
+        href="#">
+        <span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+      </a>
+      <a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 w-12 h-12 hover:text-primary transition-all active:scale-90"
+        href="#">
+        <span class="material-symbols-outlined" data-icon="format_list_bulleted">format_list_bulleted</span>
+      </a>
+      <button
+        class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 w-12 h-12 hover:text-primary transition-all active:scale-90">
+        <span class="material-symbols-outlined !text-[2.5rem] text-primary" data-icon="add_circle">add_circle</span>
+      </button>
+      <a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-500 w-12 h-12 hover:text-primary transition-all active:scale-90"
+        href="#">
+        <span class="material-symbols-outlined" data-icon="settings">settings</span>
+      </a>
+    </div>
+  </nav>
+</body>
+
+</html>

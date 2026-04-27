@@ -19,8 +19,18 @@ struct ContinuationService {
         let series = item.seriesId ?? UUID()
         item.seriesId = series
         if item.chainIndex == nil { item.chainIndex = 1 }
+
         let newItem = TodoItemV3(title: title, card: card)
         newItem.seriesId = series
+        newItem.priority = item.priority
+
+        // 继承进度：新任务从原进度继续
+        let carriedProgress = item.progress
+        if carriedProgress > 0 && carriedProgress < 100 {
+            newItem.carriedOverProgress = carriedProgress
+            newItem.progressRawValue = carriedProgress
+        }
+
         context.insert(newItem)
         try recalcSeries(seriesId: series, context: context)
     }

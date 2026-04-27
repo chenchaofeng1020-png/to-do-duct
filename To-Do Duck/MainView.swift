@@ -4,6 +4,8 @@ import UniformTypeIdentifiers
 import WidgetKit
 
 struct MainView: View {
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
         #if os(iOS)
         TabView {
@@ -33,7 +35,7 @@ struct MainView: View {
                     Image(systemName: "person")
                 }
         }
-        .accentColor(DesignSystem.checkedColor) // 使用主题色
+        .accentColor(DesignSystem.primary) // 使用主题色
         #else
         MacAppView()
         #endif
@@ -42,10 +44,17 @@ struct MainView: View {
 
 struct TodoEditSheet: View {
     @Bindable var item: TodoItemV3
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isFocused: Bool
     @State private var editingTitle: String = ""
-    
+    @State private var editingProgress: Int = 0
+    @State private var editingPriority: TodoPriority = .none
+
+    private var priorityColor: Color {
+        editingPriority == .none ? DesignSystem.outline : editingPriority.color
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // 自定义 Header
@@ -59,19 +68,87 @@ struct TodoEditSheet: View {
                 }
                 .font(.system(size: 16, weight: .bold, design: .rounded))
             }
-            .padding(.bottom, 4)
-            
-            TextField("enter_todo_content", text: $editingTitle, axis: .vertical)
-                .font(.system(size: 18, weight: .regular, design: .rounded))
-                .focused($isFocused)
-                .padding()
-                .background(DesignSystem.cardBackground)
-                .cornerRadius(12)
-                .submitLabel(.done)
-                .onSubmit {
-                    saveAndDismiss()
+
+            // 任务内容输入框 - 带背景卡片，无滚动条
+            VStack(alignment: .leading, spacing: 6) {
+                Text("任务内容")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(DesignSystem.textSecondary)
+
+                TextEditor(text: $editingTitle)
+                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                    .focused($isFocused)
+                    .scrollContentBackground(.hidden)
+                    .scrollIndicators(.hidden)
+                    .frame(minHeight: 60, maxHeight: 100)
+                    .padding(.horizontal, -4)
+            }
+            .padding(12)
+            .background(DesignSystem.surfaceContainerLowest)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(DesignSystem.outlineVariant.opacity(0.5), lineWidth: 1)
+            )
+
+            // 优先级和进度 - 合并到一个卡片
+            VStack(alignment: .leading, spacing: 16) {
+                // 优先级选择
+                HStack(spacing: 12) {
+                    Text("优先级")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(DesignSystem.textSecondary)
+                        .frame(width: 50, alignment: .leading)
+
+                    HStack(spacing: 6) {
+                        ForEach(TodoPriority.allCases, id: \.self) { priority in
+                            Button(action: {
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                    editingPriority = priority
+                                }
+                            }) {
+                                HStack(spacing: 3) {
+                                    Circle()
+                                        .fill(priority == .none ? DesignSystem.outline : priority.color)
+                                        .frame(width: 6, height: 6)
+
+                                    Text(priority.label)
+                                        .font(.system(size: 12, weight: editingPriority == priority ? .semibold : .medium, design: .rounded))
+                                        .foregroundColor(editingPriority == priority ? DesignSystem.textPrimary : DesignSystem.textSecondary)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(
+                                    Capsule()
+                                        .fill(editingPriority == priority ? (priority == .none ? DesignSystem.outline.opacity(0.15) : priority.color.opacity(0.15)) : DesignSystem.surfaceContainerHighest)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
-            
+
+                Divider()
+                    .background(DesignSystem.separatorColor)
+
+                // 进度调节
+                HStack(spacing: 12) {
+                    Text("进度")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(DesignSystem.textSecondary)
+                        .frame(width: 50, alignment: .leading)
+
+                    CompactProgressSliderInline(progress: $editingProgress, color: priorityColor)
+                }
+            }
+            .padding(12)
+            .background(DesignSystem.surfaceContainerLowest)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(DesignSystem.outlineVariant.opacity(0.5), lineWidth: 1)
+            )
+
             Spacer()
         }
         .padding(20)
@@ -81,20 +158,129 @@ struct TodoEditSheet: View {
         }
         .onAppear {
             editingTitle = item.title
+            editingProgress = item.progress
+            editingPriority = item.priority
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isFocused = true
             }
         }
-        .presentationDetents([.height(200)])
+        .presentationDetents([.height(340)])
         .presentationCornerRadius(24)
     }
-    
+
     private func saveAndDismiss() {
         let trimmed = editingTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
             item.title = trimmed
         }
+        item.priority = editingPriority
+        item.progress = editingProgress
+        try? modelContext.save()
+        WidgetCenter.shared.reloadAllTimelines()
         dismiss()
+    }
+}
+
+// MARK: - 紧凑进度滑轨（用于编辑面板）
+struct CompactProgressSlider: View {
+    @Binding var progress: Int
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 12) {
+            GeometryReader { geo in
+                let trackWidth = geo.size.width
+                let fillWidth = max(0, min(CGFloat(progress) / 100.0 * trackWidth, trackWidth))
+                let thumbX = max(0, min(fillWidth, trackWidth))
+
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(DesignSystem.surfaceContainerHighest)
+                        .frame(height: 6)
+
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(color)
+                        .frame(width: fillWidth, height: 6)
+
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 16, height: 16)
+                        .shadow(color: .black.opacity(0.12), radius: 2, x: 0, y: 1)
+                        .offset(x: thumbX - 8)
+                }
+                .frame(height: 16)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let raw = Int((value.location.x / trackWidth) * 100)
+                            let newValue = min(max(raw, 0), 100)
+                            if newValue != progress {
+                                progress = newValue
+                            }
+                        }
+                )
+            }
+            .frame(height: 16)
+
+            Text("\(progress)%")
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundColor(color)
+                .frame(width: 40, alignment: .trailing)
+        }
+        .padding(12)
+        .background(DesignSystem.surfaceContainerLowest)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+// MARK: - 内联进度滑轨（用于编辑面板，无背景）
+struct CompactProgressSliderInline: View {
+    @Binding var progress: Int
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 10) {
+            GeometryReader { geo in
+                let trackWidth = geo.size.width
+                let fillWidth = max(0, min(CGFloat(progress) / 100.0 * trackWidth, trackWidth))
+                let thumbX = max(0, min(fillWidth, trackWidth))
+
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(DesignSystem.surfaceContainerHighest)
+                        .frame(height: 6)
+
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(color)
+                        .frame(width: fillWidth, height: 6)
+
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 14, height: 14)
+                        .shadow(color: .black.opacity(0.12), radius: 2, x: 0, y: 1)
+                        .offset(x: thumbX - 7)
+                }
+                .frame(height: 14)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let raw = Int((value.location.x / trackWidth) * 100)
+                            let newValue = min(max(raw, 0), 100)
+                            if newValue != progress {
+                                progress = newValue
+                            }
+                        }
+                )
+            }
+            .frame(height: 14)
+
+            Text("\(progress)%")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundColor(color)
+                .frame(width: 36, alignment: .trailing)
+        }
     }
 }
 
@@ -103,8 +289,10 @@ struct TodoActionSheet: View {
     var onEdit: () -> Void
     var onDelete: () -> Void
     var onContinue: () -> Void
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
+    @State private var draftProgress: Int = 0
+
     // 获取明天的日期信息
     private var tomorrowInfo: (day: String, month: String) {
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
@@ -114,7 +302,23 @@ struct TodoActionSheet: View {
         monthFormatter.dateFormat = "MMM"
         return (dayFormatter.string(from: tomorrow), monthFormatter.string(from: tomorrow))
     }
-    
+
+    private var priorityColor: Color {
+        item.priority == .none ? DesignSystem.outline : item.priority.color
+    }
+
+    private var continueButtonTitle: String {
+        let addOneDay = NSLocalizedString("add_one_day", comment: "")
+        if draftProgress > 0 && draftProgress < 100 {
+            if Locale.preferredLanguages.first?.hasPrefix("zh") == true {
+                return "\(addOneDay) · 已做 \(draftProgress)%"
+            } else {
+                return "\(addOneDay) · \(draftProgress)% done"
+            }
+        }
+        return addOneDay
+    }
+
     var body: some View {
         VStack(spacing: 20) {
             // 顶部栏：装饰条
@@ -125,7 +329,7 @@ struct TodoActionSheet: View {
             }
             .padding(.top, 12)
             .padding(.horizontal, 20)
-            
+
             // 标题预览
             Text(item.title)
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
@@ -133,7 +337,7 @@ struct TodoActionSheet: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
-            
+
             // 优先级选择
             HStack(spacing: 12) {
                 ForEach(TodoPriority.allCases, id: \.self) { priority in
@@ -141,38 +345,46 @@ struct TodoActionSheet: View {
                         withAnimation {
                             item.priority = priority
                         }
+                        try? modelContext.save()
+                        WidgetCenter.shared.reloadAllTimelines()
                     }) {
                         VStack(spacing: 4) {
                             ZStack {
                                 Circle()
-                                    .stroke(priority == .none ? DesignSystem.textTertiary : priority.color, lineWidth: 2)
+                                    .stroke(priority == .none ? DesignSystem.outline : priority.color, lineWidth: 2)
                                     .frame(width: 32, height: 32)
-                                
+
                                 if item.priority == priority {
                                     Circle()
-                                        .fill(priority == .none ? DesignSystem.textTertiary : priority.color)
+                                        .fill(priority == .none ? DesignSystem.outline : priority.color)
                                         .frame(width: 20, height: 20)
                                 }
                             }
-                            
+
                             Text(priority.label)
                                 .font(.system(size: 12, weight: .medium, design: .rounded))
-                                .foregroundColor(item.priority == priority ? (priority == .none ? DesignSystem.textTertiary : priority.color) : DesignSystem.textSecondary)
+                                .foregroundColor(item.priority == priority ? (priority == .none ? DesignSystem.outline : priority.color) : DesignSystem.onSurfaceVariant)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(
                              RoundedRectangle(cornerRadius: 12)
-                                .fill(item.priority == priority ? (priority == .none ? DesignSystem.textTertiary.opacity(0.1) : priority.color.opacity(0.1)) : Color.clear)
+                                .fill(item.priority == priority ? (priority == .none ? DesignSystem.outline.opacity(0.1) : priority.color.opacity(0.1)) : Color.clear)
                         )
                     }
                 }
             }
             .padding(12)
-            .background(DesignSystem.cardBackground)
-            .cornerRadius(20)
-            .shadow(color: DesignSystem.shadowColor, radius: 10, x: 0, y: 4)
-            
+            .background(DesignSystem.surfaceContainerLowest)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+
+            // 进度选择
+            ProgressPicker(progress: $draftProgress, color: priorityColor)
+                .padding(.horizontal, 4)
+                .onChange(of: draftProgress) { _, newValue in
+                    item.progress = newValue
+                }
+
             // 加一天按钮（主要操作，突出显示）
             Button(action: {
                 dismiss()
@@ -185,47 +397,45 @@ struct TodoActionSheet: View {
                     VStack(spacing: 0) {
                         Text(tomorrowInfo.month.uppercased())
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(DesignSystem.onError)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 4)
-                            .background(Color.red.opacity(0.8))
-                        
+                            .background(DesignSystem.error)
+
                         Text(tomorrowInfo.day)
                             .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(DesignSystem.textPrimary)
+                            .foregroundColor(DesignSystem.onSurface)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(DesignSystem.cardBackground)
+                            .background(DesignSystem.surfaceContainerLowest)
                     }
                     .frame(width: 48, height: 52)
-                    .cornerRadius(8)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(DesignSystem.cardBorder, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(DesignSystem.outlineVariant, lineWidth: 1)
                     )
-                    .shadow(color: DesignSystem.shadowColor, radius: 2, x: 0, y: 1)
                     .padding(.leading, 16)
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("add_one_day")
+                        Text(continueButtonTitle)
                             .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(DesignSystem.textPrimary)
+                            .foregroundColor(DesignSystem.onSurface)
                         Text("or_select_other_date")
                             .font(.system(size: 13, weight: .regular, design: .rounded))
-                            .foregroundColor(DesignSystem.textSecondary)
+                            .foregroundColor(DesignSystem.onSurfaceVariant)
                     }
                     .padding(.leading, 16)
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(DesignSystem.textTertiary)
+                        .foregroundColor(DesignSystem.outline)
                         .padding(.trailing, 20)
                 }
                 .frame(height: 80)
-                .background(DesignSystem.cardBackground)
-                .cornerRadius(20)
-                .shadow(color: DesignSystem.shadowColor, radius: 10, x: 0, y: 4)
+                .background(DesignSystem.surfaceContainerLowest)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             }
             .buttonStyle(ScaleButtonStyle())
             
@@ -239,18 +449,17 @@ struct TodoActionSheet: View {
                     }
                 }) {
                     VStack(spacing: 8) {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 22, weight: .black))
-                            .foregroundColor(DesignSystem.textPrimary)
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(DesignSystem.onSurface)
                         Text("edit")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
-                            .foregroundColor(DesignSystem.textPrimary)
+                            .foregroundColor(DesignSystem.onSurface)
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 80)
-                    .background(DesignSystem.cardBackground)
-                    .cornerRadius(20)
-                    .shadow(color: DesignSystem.shadowColor, radius: 10, x: 0, y: 4)
+                    .background(DesignSystem.surfaceContainerLowest)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 }
                 .buttonStyle(ScaleButtonStyle())
                 
@@ -262,17 +471,17 @@ struct TodoActionSheet: View {
                     }
                 }) {
                     VStack(spacing: 8) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 22))
-                            .foregroundColor(.red)
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 21, weight: .semibold))
+                            .foregroundColor(DesignSystem.error)
                         Text("delete")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
-                            .foregroundColor(.red)
+                            .foregroundColor(DesignSystem.error)
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 80)
-                    .background(DesignSystem.cardBackground)
-                    .cornerRadius(20)
+                    .background(DesignSystem.surfaceContainerLowest)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     .shadow(color: DesignSystem.shadowColor, radius: 10, x: 0, y: 4)
                 }
                 .buttonStyle(ScaleButtonStyle())
@@ -282,14 +491,23 @@ struct TodoActionSheet: View {
         }
         .padding(.horizontal, 20)
         .background(DesignSystem.softBackground)
-        .presentationDetents([.height(400)])
+        .presentationDetents([.height(460)])
         .presentationCornerRadius(32)
+        .onAppear {
+            draftProgress = item.progress
+        }
+        .onDisappear {
+            try? modelContext.save()
+            WidgetCenter.shared.reloadAllTimelines()
+        }
     }
 }
 
 struct TodoHomeView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: [SortDescriptor(\DailyCardV3.date, order: .reverse), SortDescriptor(\DailyCardV3.createdAt, order: .reverse)]) private var cards: [DailyCardV3]
+    @Environment(\.scenePhase) private var scenePhase
+    @Query(sort: [SortDescriptor(\DailyCardV3.date, order: .reverse), SortDescriptor(\DailyCardV3.createdAt, order: .reverse)]) private var observedCards: [DailyCardV3]
+    @Query(sort: [SortDescriptor(\TodoItemV3.createdAt), SortDescriptor(\TodoItemV3.orderIndex)]) private var observedItems: [TodoItemV3]
     @State private var addingTextByCard: [UUID: String] = [:]
     @State private var showTargetPickerForItem: TodoItemV3?
     @State private var editingItem: TodoItemV3? // 控制编辑状态
@@ -301,16 +519,117 @@ struct TodoHomeView: View {
     @State private var confettiSourcePosition: CGPoint = .zero // 撒花爆发点
     @State private var showMenu: Bool = false
     @AppStorage("hasLaunchedBefore") private var hasLaunchedBefore: Bool = false
+    @State private var isRefreshing: Bool = false // 下拉刷新状态
+    @State private var showGhostButton: Bool = true // 控制幽灵按钮显示
+    @State private var cards: [DailyCardV3] = []
+    @State private var loadedCardCount: Int = 0
+    @State private var hasMoreCards: Bool = true
+    @State private var isLoadingMoreCards: Bool = false
+    @State private var lastAutoRefreshAt: Date = .distantPast
+    @State private var lastWidgetReloadAt: Date = .distantPast
+
+    private let cardPageSize = 6
+    private let autoRefreshMinimumInterval: TimeInterval = 2
+    private let widgetReloadMinimumInterval: TimeInterval = 1
+
+    // iPhone 首页用了分页缓存，需要监听底层 SwiftData/CloudKit 变化后主动重载，
+    // 否则跨设备同步后的卡片和进度会停留在旧快照。
+    private var syncVersion: Int {
+        var hasher = Hasher()
+
+        for card in observedCards {
+            hasher.combine(card.id)
+            hasher.combine(card.date)
+            hasher.combine(card.customTitle ?? "")
+            hasher.combine(card.items?.count ?? 0)
+        }
+
+        for item in observedItems {
+            hasher.combine(item.id)
+            hasher.combine(item.card?.id.uuidString ?? "inbox")
+            hasher.combine(item.title)
+            hasher.combine(item.orderIndex)
+            hasher.combine(item.progress)
+            hasher.combine(item.isDone)
+            hasher.combine(item.completedAt?.timeIntervalSinceReferenceDate ?? -1)
+        }
+
+        return hasher.finalize()
+    }
+    
+    // 问候语标题
+    private var greetingTitle: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<12:
+            return "Hi👋,早上好～"
+        case 12..<14:
+            return "Hi👋,中午好～"
+        case 14..<18:
+            return "Hi👋,下午好～"
+        case 18..<23:
+            return "Hi👋,晚上好～"
+        default:
+            return "Hi👋,夜深了～"
+        }
+    }
+    
+    // 当前日期字符串
+    private var currentDateString: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "yyyy年M月d日 EEEE"
+        return formatter.string(from: Date())
+    }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            LazyVStack(spacing: 16) {
-                HeaderBar()
-                HStack {
-                    FloatingNewDayButton { withAnimation { createTodayCard() } }
-                    Spacer()
-                }
-                ForEach(cards) { card in
+        ZStack(alignment: .bottomTrailing) {
+            ScrollView(showsIndicators: false) {
+                LazyVStack(spacing: 16) {
+                    // 幽灵按钮 - 开启新的一天
+                    Button {
+                        withAnimation { createTodayCard() }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 14, weight: .bold))
+                            Text("开启新的一天")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                        }
+                        .foregroundColor(DesignSystem.primary)
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(DesignSystem.surfaceContainerLow)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .stroke(DesignSystem.primary.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                    .padding(.horizontal, 16)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear
+                                .onChange(of: proxy.frame(in: .global).minY) { _, newValue in
+                                    // 当按钮滚动到屏幕外（y < 150）时隐藏，回到视野（y >= 150）时显示
+                                    if newValue < 150 && showGhostButton {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            showGhostButton = false
+                                        }
+                                    } else if newValue >= 150 && !showGhostButton {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            showGhostButton = true
+                                        }
+                                    }
+                                }
+                        }
+                    )
+                    .opacity(showGhostButton ? 1 : 0)
+                    
+                    ForEach(cards) { card in
                         DayCardViewNew(
                             card: card,
                             addingText: Binding(
@@ -325,30 +644,69 @@ struct TodoHomeView: View {
                             onEdit: { item in
                                 menuForItem = item // 点击触发菜单
                             },
+                            onDeleteCard: {
+                                reloadCards(reset: true)
+                            },
                             onComplete: { sourcePoint in
                                 confettiSourcePosition = sourcePoint
                                 confettiCounter += 1
                                 Haptics.success()
+                            },
+                            onDropToCard: { itemIDs in
+                                TodoDropCoordinator.moveItemsToCard(itemIDs: itemIDs, to: card)
                             }
                         )
+                    }
+
+                    if isLoadingMoreCards {
+                        HStack(spacing: 10) {
+                            ProgressView()
+                            Text("加载更多中…")
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundColor(DesignSystem.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                    } else if hasMoreCards && !cards.isEmpty {
+                        Text("继续上滑查看更早的待办")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundColor(DesignSystem.textTertiary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .onAppear {
+                                loadMoreCardsIfNeeded()
+                            }
                     }
                     
                     // 空状态提示
                     if cards.isEmpty {
-                        VStack(spacing: 16) {
-                            Spacer().frame(height: 40)
-                            Image(systemName: "moon.zzz.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(DesignSystem.textTertiary.opacity(0.5))
-                        Text("todo_list_empty")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(DesignSystem.textSecondary)
-                        Button("create_today") {
-                            withAnimation { createTodayCard() }
-                        }
-                            .buttonStyle(.borderedProminent)
-                            .tint(DesignSystem.checkedColor)
-                            .controlSize(.large)
+                        VStack(spacing: 20) {
+                            Spacer().frame(height: 60)
+                            
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 64, weight: .light))
+                                .foregroundColor(DesignSystem.outline)
+                            
+                            Text("todo_list_empty")
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                .foregroundColor(DesignSystem.onSurfaceVariant)
+                            
+                            Button {
+                                withAnimation { createTodayCard() }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 14, weight: .bold))
+                                    Text("create_today")
+                                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                                }
+                                .foregroundColor(DesignSystem.onPrimary)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .background(DesignSystem.primary)
+                                .clipShape(Capsule())
+                            }
+                            .padding(.top, 8)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
@@ -358,27 +716,34 @@ struct TodoHomeView: View {
                 .padding(.top, 12)
             }
             .background(
-                ZStack(alignment: .topTrailing) {
-                    DesignSystem.warmBackground
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            #if os(iOS)
-                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                            #endif
-                        }
-                    
-                    // 替换为浅色花纹装饰
-                    PatternDecorationView()
-                        .offset(x: 20, y: -20)
-                        .ignoresSafeArea()
-                }
+                DesignSystem.background
+                    .ignoresSafeArea()
             )
             .scrollDismissesKeyboard(.interactively)
-            #if os(iOS)
-            .navigationBarHidden(true)
-            #else
-            .navigationTitle("To-Do Duck")
-            #endif
+            .navigationTitle(greetingTitle)
+
+            .refreshable {
+                await refreshData()
+            }
+            
+            // 悬浮按钮 - 新的一天（仅在幽灵按钮隐藏时显示）
+            if !showGhostButton {
+                Button {
+                    withAnimation { createTodayCard() }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(DesignSystem.primary)
+                        .clipShape(Circle())
+                        .shadow(color: DesignSystem.primary.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .padding(24)
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
         .overlay(
                 // 撒花层 - 移至最上层 Overlay
                 ConfettiView(counter: $confettiCounter, burstPosition: confettiSourcePosition)
@@ -416,6 +781,8 @@ struct TodoHomeView: View {
                     showPastDateAlert = true
                 } else {
                     withAnimation { try? ContinuationService.continueItem(item, to: targetDate, context: modelContext) }
+                    try? modelContext.save()
+                    reloadCards(reset: true)
                     Haptics.success()
                     showTargetPickerForItem = nil
                 }
@@ -435,7 +802,18 @@ struct TodoHomeView: View {
             if !hasLaunchedBefore {
                 createInitialCard()
                 hasLaunchedBefore = true
+            } else if cards.isEmpty {
+                reloadCards(reset: true)
             }
+            triggerAutomaticRefreshIfNeeded(force: true)
+        }
+        .onChange(of: syncVersion) { _, _ in
+            reloadCards(reset: true)
+            reloadWidgetTimelineIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            triggerAutomaticRefreshIfNeeded()
         }
     }
 
@@ -451,27 +829,35 @@ struct TodoHomeView: View {
         let swipeItem = TodoItemV3(title: NSLocalizedString("tap_to_view_details", comment: "Tap to view details"), card: card)
         swipeItem.orderIndex = 1
         modelContext.insert(swipeItem)
+        try? modelContext.save()
+        WidgetCenter.shared.reloadAllTimelines()
+        reloadCards(reset: true)
     }
 
     private func createTodayCard() {
-        let today = Calendar.current.startOfDay(for: Date())
-        
-        // 筛选出今天的卡片
-        let todayCards = cards.filter { Calendar.current.isDate($0.date, inSameDayAs: today) }
-        
-        // 准备日期格式化器，用于生成默认标题和比对
+        let calendar = Calendar.current
+        let targetDate = DailyCardDatePlanner.targetDate(
+            latestCardDate: observedCards.first?.date,
+            today: Date(),
+            calendar: calendar
+        )
+
+        if observedCards.contains(where: { calendar.isDate($0.date, inSameDayAs: targetDate) }) {
+            return
+        }
+
         let formatter = DateFormatter()
         formatter.dateFormat = NSLocalizedString("card_date_format", comment: "Date format for card title")
-        let defaultDateTitle = formatter.string(from: today)
+        let defaultDateTitle = formatter.string(from: targetDate)
         
         var titleToUse: String? = nil
-        
-        // 获取今天所有卡片的显示标题
-        let existingTitles = Set(todayCards.map { $0.customTitle ?? defaultDateTitle })
-        
-        // 检查默认标题是否已被占用
+        let existingTitles = Set(
+            observedCards
+                .filter { calendar.isDate($0.date, inSameDayAs: targetDate) }
+                .map { $0.customTitle ?? defaultDateTitle }
+        )
+
         if existingTitles.contains(defaultDateTitle) {
-            // 需要加序号
             var counter = 1
             var candidate = "\(defaultDateTitle) (\(counter))"
             while existingTitles.contains(candidate) {
@@ -479,14 +865,14 @@ struct TodoHomeView: View {
                 candidate = "\(defaultDateTitle) (\(counter))"
             }
             titleToUse = candidate
-        } else {
-            // 默认标题未被占用，使用默认（nil）
-            titleToUse = nil
         }
         
-        let card = DailyCardV3(date: today)
+        let card = DailyCardV3(date: targetDate)
         card.customTitle = titleToUse
         modelContext.insert(card)
+        try? modelContext.save()
+        WidgetCenter.shared.reloadAllTimelines()
+        reloadCards(reset: true)
     }
 
     private func addItem(text: String, to card: DailyCardV3) {
@@ -494,7 +880,7 @@ struct TodoHomeView: View {
         guard !t.isEmpty else { return }
         
         // 计算当前最大的 orderIndex
-        let maxOrder = card.items.map { $0.orderIndex }.max() ?? -1
+        let maxOrder = card.items?.map { $0.orderIndex }.max() ?? -1
         
         let item = TodoItemV3(title: t, card: card)
         item.orderIndex = maxOrder + 1
@@ -507,32 +893,81 @@ struct TodoHomeView: View {
         // 刷新 Widget
         WidgetCenter.shared.reloadAllTimelines()
     }
-}
 
-struct HeaderBar: View {
-    private var dateString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = NSLocalizedString("date_format", comment: "Date format string")
-        formatter.locale = Locale.current
-        return formatter.string(from: Date())
+    private func refreshData(showRefreshIndicator: Bool = true) async {
+        if showRefreshIndicator {
+            isRefreshing = true
+        }
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        reloadCards(reset: true)
+        if showRefreshIndicator {
+            isRefreshing = false
+        }
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 6) {
-                // App Logo
-                DuckIcon(size: 34)
-                
-                Text("To-Do Duck")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundColor(DesignSystem.textPrimary)
-            }
-            Text(dateString)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundColor(DesignSystem.textSecondary)
+    private func triggerAutomaticRefreshIfNeeded(force: Bool = false) {
+        guard !isRefreshing else { return }
+
+        let now = Date()
+        guard force || now.timeIntervalSince(lastAutoRefreshAt) >= autoRefreshMinimumInterval else {
+            return
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.bottom, 16)
+
+        lastAutoRefreshAt = now
+
+        Task {
+            await refreshData(showRefreshIndicator: false)
+        }
+    }
+
+    private func reloadWidgetTimelineIfNeeded() {
+        let now = Date()
+        guard now.timeIntervalSince(lastWidgetReloadAt) >= widgetReloadMinimumInterval else {
+            return
+        }
+
+        lastWidgetReloadAt = now
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private func reloadCards(reset: Bool) {
+        guard !isLoadingMoreCards else { return }
+        if reset {
+            loadedCardCount = 0
+            hasMoreCards = true
+            cards = []
+        }
+        loadMoreCardsIfNeeded()
+    }
+
+    private func loadMoreCardsIfNeeded() {
+        guard hasMoreCards, !isLoadingMoreCards else { return }
+
+        isLoadingMoreCards = true
+        defer { isLoadingMoreCards = false }
+
+        var descriptor = FetchDescriptor<DailyCardV3>(
+            sortBy: [
+                SortDescriptor(\DailyCardV3.date, order: .reverse),
+                SortDescriptor(\DailyCardV3.createdAt, order: .reverse)
+            ]
+        )
+        descriptor.fetchOffset = loadedCardCount
+        descriptor.fetchLimit = cardPageSize
+
+        do {
+            let fetchedCards = try modelContext.fetch(descriptor)
+            if loadedCardCount == 0 {
+                cards = fetchedCards
+            } else {
+                cards.append(contentsOf: fetchedCards)
+            }
+            loadedCardCount += fetchedCards.count
+            hasMoreCards = fetchedCards.count == cardPageSize
+        } catch {
+            print("Failed to load cards: \(error)")
+            hasMoreCards = false
+        }
     }
 }
 
@@ -660,104 +1095,208 @@ struct TargetDatePickerSheet: View {
     var onConfirm: () -> Void
     @Environment(\.dismiss) private var dismiss
     
+    // 计算属性：获取明日日期
+    private var tomorrowDate: Date {
+        Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+    }
+    
+    // 计算属性：获取下周一日期
+    private var nextMondayDate: Date {
+        let today = Date()
+        let calendar = Calendar.current
+        let weekday = calendar.component(.weekday, from: today)
+        var daysToAdd = 0
+        if weekday == 2 { // Today is Monday
+            daysToAdd = 7
+        } else {
+            daysToAdd = (9 - weekday) % 7
+            if daysToAdd == 0 { daysToAdd = 7 }
+        }
+        return calendar.date(byAdding: .day, value: daysToAdd, to: today) ?? today
+    }
+    
+    // 格式化日期显示
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M月d日"
+        return formatter.string(from: date)
+    }
+    
+    // 格式化星期显示
+    private func formatWeekday(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE" // 周几
+        return formatter.string(from: date)
+    }
+    
     var body: some View {
-        VStack(spacing: 20) {
-            // Header with Cancel Button
-            ZStack(alignment: .center) {
-                Capsule()
-                    .fill(DesignSystem.textSecondary.opacity(0.2))
-                    .frame(width: 36, height: 4)
+        VStack(spacing: 0) {
+            // Header
+            ZStack {
+                Text("add_one_day")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(DesignSystem.textPrimary)
                 
                 HStack {
                     Spacer()
-                    Button("cancel") {
-                        dismiss()
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(DesignSystem.textTertiary.opacity(0.8))
                     }
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                    .foregroundColor(DesignSystem.textSecondary)
-                    .buttonStyle(.plain) // Ensure it looks clickable on Mac
+                    .buttonStyle(.plain)
                 }
             }
-            .padding(.top, 12)
+            .padding(.top, 20)
             .padding(.horizontal, 20)
+            .padding(.bottom, 24)
             
-            Text("add_one_day")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundColor(DesignSystem.textPrimary)
-            
-            // 快捷选项
-            HStack(spacing: 12) {
-                Button(action: {
-                    targetDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
-                }) {
-                    Text("tomorrow")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundColor(DesignSystem.textPrimary)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(DesignSystem.cardBorder, lineWidth: 1)
-                        )
-                }
-                
-                Button(action: {
-                    // 下周一
-                    let today = Date()
-                    let calendar = Calendar.current
-                    // 找到下个周一
-                    // 1 = Sunday, 2 = Monday, ...
-                    let weekday = calendar.component(.weekday, from: today)
-                    var daysToAdd = 0
-                    if weekday == 2 { // Today is Monday
-                        daysToAdd = 7
-                    } else {
-                        // weekday: 1(Sun), 3(Tue), 4(Wed), 5(Thu), 6(Fri), 7(Sat)
-                        // target: 2(Mon)
-                        // if Sun(1) -> +1 -> Mon(2)
-                        // if Tue(3) -> +6 -> Mon(2+7=9)
-                        daysToAdd = (9 - weekday) % 7
-                        if daysToAdd == 0 { daysToAdd = 7 }
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Quick Actions
+                    HStack(spacing: 12) {
+                        QuickDateButton(
+                            title: NSLocalizedString("tomorrow", comment: "Tomorrow"),
+                            date: formatDate(tomorrowDate),
+                            weekday: formatWeekday(tomorrowDate),
+                            icon: "sun.max.fill",
+                            color: .orange,
+                            isSelected: Calendar.current.isDate(targetDate, inSameDayAs: tomorrowDate)
+                        ) {
+                            withAnimation {
+                                targetDate = tomorrowDate
+                            }
+                        }
+                        
+                        QuickDateButton(
+                            title: NSLocalizedString("next_monday", comment: "Next Monday"),
+                            date: formatDate(nextMondayDate),
+                            weekday: formatWeekday(nextMondayDate),
+                            icon: "briefcase.fill",
+                            color: .blue,
+                            isSelected: Calendar.current.isDate(targetDate, inSameDayAs: nextMondayDate)
+                        ) {
+                            withAnimation {
+                                targetDate = nextMondayDate
+                            }
+                        }
                     }
+                    .padding(.horizontal, 20)
                     
-                    targetDate = calendar.date(byAdding: .day, value: daysToAdd, to: today) ?? today
-                }) {
-                    Text("next_monday")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundColor(DesignSystem.textPrimary)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(DesignSystem.cardBorder, lineWidth: 1)
-                        )
+                    // Calendar Card
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("or_select_other_date")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundColor(DesignSystem.textSecondary)
+                            .padding(.horizontal, 4)
+                        
+                        CustomCalendarView(selectedDate: $targetDate)
+                            .padding(16)
+                            .background(DesignSystem.cardBackground)
+                            .cornerRadius(16)
+                            .shadow(color: DesignSystem.shadowColor.opacity(0.5), radius: 8, x: 0, y: 2)
+                    }
+                    .padding(.horizontal, 20)
                 }
+                .padding(.bottom, 100) // Space for bottom button
             }
             
-            DatePicker("", selection: $targetDate, displayedComponents: .date)
-                .datePickerStyle(.graphical)
-                .padding(.horizontal)
-                .padding(.horizontal)
-
-            Button(action: {
-                onConfirm()
-            }) {
-                Text("confirm_continuation")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+            // Bottom Button Container
+            VStack {
+                Button(action: {
+                    onConfirm()
+                }) {
+                    HStack {
+                        Text("confirm_continuation")
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 16, weight: .bold))
+                    }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(DesignSystem.checkedColor)
-                    .cornerRadius(16)
+                    .frame(height: 54)
+                    .background(DesignSystem.primary)
+                    .cornerRadius(27)
+                    .shadow(color: DesignSystem.primary.opacity(0.4), radius: 10, x: 0, y: 5)
+                }
+                .buttonStyle(ScaleButtonStyle())
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 10)
+            .padding(.top, 16)
+            .padding(.bottom, 16) // Safe area handled by sheet usually, but adding some padding
+            .background(
+                Rectangle()
+                    #if os(iOS)
+                    .fill(.regularMaterial)
+                    #else
+                    .fill(Color.clear)
+                    #endif
+                    .ignoresSafeArea()
+            )
         }
+        #if os(macOS)
+        .frame(width: 400, height: 600)
+        #endif
         .background(DesignSystem.softBackground)
-        .presentationDetents([.height(520)])
-        .presentationCornerRadius(32)
+        .presentationDetents([.fraction(0.7), .large])
+        .presentationCornerRadius(24)
+    }
+}
+
+// 辅助视图：快捷日期按钮
+struct QuickDateButton: View {
+    let title: String
+    let date: String
+    let weekday: String
+    let icon: String
+    let color: Color
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Image(systemName: icon)
+                            .font(.system(size: 12))
+                        Text(title)
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(isSelected ? .white : color)
+                    .opacity(isSelected ? 1 : 0.8)
+                    
+                    Spacer()
+                    
+                    Text(date)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(isSelected ? .white : DesignSystem.textPrimary)
+                    
+                    Text(weekday)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundColor(isSelected ? .white.opacity(0.8) : DesignSystem.textSecondary)
+                }
+                Spacer()
+            }
+            .padding(16)
+            .frame(height: 100)
+            .background(
+                ZStack {
+                    if isSelected {
+                        color
+                    } else {
+                        DesignSystem.cardBackground
+                    }
+                }
+            )
+            .cornerRadius(16)
+            .shadow(color: isSelected ? color.opacity(0.3) : DesignSystem.shadowColor.opacity(0.5), radius: 8, x: 0, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? Color.clear : color.opacity(0.1), lineWidth: 1)
+            )
+        }
+        .buttonStyle(ScaleButtonStyle())
     }
 }
 
@@ -786,8 +1325,8 @@ struct CardActionSheet: View {
                         Circle()
                             .fill(DesignSystem.warmBackground)
                             .frame(width: 44, height: 44)
-                        Image(systemName: "pencil")
-                            .font(.system(size: 20, weight: .black))
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundColor(DesignSystem.textPrimary)
                     }
                     
@@ -824,8 +1363,8 @@ struct CardActionSheet: View {
                         Circle()
                             .fill(Color.red.opacity(0.08))
                             .frame(width: 44, height: 44)
-                        Image(systemName: "trash")
-                            .font(.system(size: 20, weight: .medium))
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.red)
                     }
                     
@@ -865,76 +1404,185 @@ struct ScaleButtonStyle: ButtonStyle {
     }
 }
 
-struct FloatingNewDayButton: View {
-    var action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: "plus")
-                .font(.system(size: 15, weight: .bold))
-                Text("新的一天")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
-            }
-            .foregroundColor(.white)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .background(DesignSystem.checkedColor)
-            .clipShape(Capsule())
-            .shadow(color: DesignSystem.checkedColor.opacity(0.3), radius: 12, x: 0, y: 6)
+#if os(iOS)
+private enum TodoDropCoordinator {
+    static func moveItemsToCard(itemIDs: [String], to card: DailyCardV3) -> Bool {
+        guard let itemToMove = firstItem(from: itemIDs, context: card.modelContext) else { return false }
+        let sourceCard = itemToMove.card
+
+        if sourceCard?.id == card.id {
+            return false
+        }
+
+        itemToMove.card = card
+        var destinationItems = (card.items ?? []).sorted { $0.orderIndex < $1.orderIndex }
+        destinationItems.removeAll { $0.id == itemToMove.id }
+        destinationItems.append(itemToMove)
+        normalize(items: destinationItems)
+
+        if let sourceCard, sourceCard.id != card.id {
+            normalizeCardItems(sourceCard)
+        }
+
+        return save(context: card.modelContext)
+    }
+
+    static func normalizeCardItems(_ card: DailyCardV3) {
+        let orderedItems = (card.items ?? []).sorted { $0.orderIndex < $1.orderIndex }
+        normalize(items: orderedItems)
+    }
+
+    private static func firstItem(from itemIDs: [String], context: ModelContext?) -> TodoItemV3? {
+        guard
+            let context,
+            let itemIdString = itemIDs.first,
+            let itemId = UUID(uuidString: itemIdString)
+        else {
+            return nil
+        }
+
+        let descriptor = FetchDescriptor<TodoItemV3>(predicate: #Predicate { $0.id == itemId })
+        return try? context.fetch(descriptor).first
+    }
+
+    private static func normalize(items: [TodoItemV3]) {
+        for (index, item) in items.enumerated() {
+            item.orderIndex = index
         }
     }
+
+    private static func save(context: ModelContext?) -> Bool {
+        guard let context else { return false }
+        try? context.save()
+        WidgetCenter.shared.reloadAllTimelines()
+        return true
+    }
 }
+#endif
 
 struct DayCardViewNew: View {
     @Environment(\.modelContext) private var modelContext
-    var card: DailyCardV3
+    @Bindable var card: DailyCardV3
     @Binding var addingText: String
     var onAdd: (String) -> Void
     var onContinue: (TodoItemV3) -> Void
-    var onEdit: (TodoItemV3) -> Void // 新增参数
-    var onComplete: (CGPoint) -> Void // 新增完成回调，携带坐标
+    var onEdit: (TodoItemV3) -> Void
+    var onDeleteCard: () -> Void
+    var onComplete: (CGPoint) -> Void
+    var onDropToCard: ([String]) -> Bool
     @FocusState private var addingFieldFocused: Bool
     
     @State private var showActionMenu = false
     @State private var showEditSheet = false
     @State private var showDeleteAlert = false
-    @State private var draggingItem: TodoItemV3? // 追踪当前拖拽的项
+    @State private var draggingItem: TodoItemV3?
+    @State private var isDropTargeted = false
     
-    // 日期格式化器
-    private var dateFormatter: DateFormatter {
+    private static let cardDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy年MM月dd日"
+        formatter.dateFormat = "M月d日"
         return formatter
-    }
+    }()
+    
+    private static let cardWeekdayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE"
+        return formatter
+    }()
     
     // 排序后的待办事项
     private var sortedItems: [TodoItemV3] {
-        card.items.sorted { $0.orderIndex < $1.orderIndex }
+        card.items?.sorted { $0.orderIndex < $1.orderIndex } ?? []
+    }
+    
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(card.date)
+    }
+
+    private var relativeDayTitle: String? {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let cardDay = calendar.startOfDay(for: card.date)
+
+        if cardDay == today {
+            return "今天"
+        }
+
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: today), cardDay == tomorrow {
+            return "明天"
+        }
+
+        if let dayAfterTomorrow = calendar.date(byAdding: .day, value: 2, to: today), cardDay == dayAfterTomorrow {
+            return "后天"
+        }
+
+        return nil
+    }
+    
+    private var displayTitle: String {
+        if let title = card.customTitle, !title.isEmpty {
+            return title
+        }
+        return relativeDayTitle ?? Self.cardDateFormatter.string(from: card.date)
+    }
+
+    private func handleDropToCard(providers: [NSItemProvider]) -> Bool {
+        guard let provider = providers.first else { return false }
+
+        provider.loadObject(ofClass: NSString.self) { object, _ in
+            guard let itemID = object as? NSString else { return }
+
+            DispatchQueue.main.async {
+                withAnimation {
+                    _ = onDropToCard([String(itemID)])
+                }
+            }
+        }
+
+        return true
     }
     
     var body: some View {
+        let items = sortedItems
+        let totalCount = items.count
+        let completedCount = items.filter { $0.isDone }.count
+
         VStack(alignment: .leading, spacing: 0) {
-            // 卡片头部日期
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    if let title = card.customTitle, !title.isEmpty {
-                        Text(title)
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(DesignSystem.textPrimary)
+            // 卡片头部 - 新设计：标题 + 日期 + 计数标签
+            HStack(alignment: .center) {
+                // 左侧：标题和日期
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(displayTitle)
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(DesignSystem.textPrimary)
+                    
+                    if isToday {
+                        Text(Self.cardWeekdayFormatter.string(from: card.date))
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(DesignSystem.textSecondary)
                     } else {
-                        Text(dateFormatter.string(from: card.date))
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(DesignSystem.textPrimary)
+                        Text(Self.cardWeekdayFormatter.string(from: card.date))
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(DesignSystem.textSecondary)
                     }
                 }
                 
                 Spacer()
+                
+                // 右侧：待办计数标签
+                if totalCount > 0 {
+                    Text("\(completedCount)/\(totalCount)")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(DesignSystem.onSurfaceVariant)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(DesignSystem.surfaceContainerHigh)
+                        .clipShape(Capsule())
+                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .frame(maxWidth: .infinity, alignment: .leading) // 确保占满整行
-            .background(DesignSystem.cardHeaderBackground)
-            .contentShape(Rectangle()) // 确保整个区域可点击
+            .contentShape(Rectangle())
             .onTapGesture {
                 showActionMenu = true
             }
@@ -955,23 +1603,16 @@ struct DayCardViewNew: View {
                     }
                     try? modelContext.save()
                     WidgetCenter.shared.reloadAllTimelines()
+                    onDeleteCard()
                 }
                 Button("取消", role: .cancel) {}
             } message: {
                 Text("确定要删除这张卡片及其所有待办事项吗？此操作不可恢复。")
             }
             
-            // 待办列表
-            VStack(spacing: 0) {
-                let items = sortedItems
-                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                    if index > 0 {
-                        Rectangle()
-                            .fill(DesignSystem.separatorColor)
-                            .frame(height: 0.5)
-                            .padding(.leading, 52) // 对齐文字
-                    }
-                    
+            // 待办列表 - 新设计：药丸形状任务项
+            VStack(spacing: 12) {
+                ForEach(items) { item in
                     TodoItemRowNew(item: item, onContinue: {
                         onContinue(item)
                     }, onEdit: {
@@ -979,9 +1620,7 @@ struct DayCardViewNew: View {
                     }, onComplete: { point in
                         onComplete(point)
                     })
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 14)
-                    .background(Color.white.opacity(0.01)) // 增加背景以支持拖拽
+                    .padding(.horizontal, 16)
                     .onDrag {
                         self.draggingItem = item
                         return NSItemProvider(object: item.id.uuidString as NSString)
@@ -989,24 +1628,23 @@ struct DayCardViewNew: View {
                     .onDrop(of: [.text], delegate: TodoDropDelegate(item: item, items: items, draggingItem: draggingItem, onFinish: { draggingItem = nil }))
                 }
                 
-                if !card.items.isEmpty {
-                    Rectangle()
-                        .fill(DesignSystem.separatorColor)
-                        .frame(height: 0.5)
-                        .padding(.leading, 52)
-                }
-                
-                // 输入框区域
-                HStack(spacing: 12) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(DesignSystem.textTertiary)
-                        .frame(width: 24, height: 24)
+                // 输入框区域 - 使用浅色背景区分
+                HStack(spacing: 14) {
+                    // 虚线圆圈表示可添加
+                    ZStack {
+                        Circle()
+                            .stroke(DesignSystem.outlineVariant.opacity(0.4), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2]))
+                            .frame(width: 22, height: 22)
+                        
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(DesignSystem.outlineVariant)
+                    }
                     
                     TextField(NSLocalizedString("add_new_task", comment: "Add new task placeholder"), text: $addingText)
                         .focused($addingFieldFocused)
-                        .font(.system(size: 16, weight: .regular, design: .rounded))
-                        .foregroundColor(DesignSystem.textPrimary)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundColor(DesignSystem.onSurface)
                         .onSubmit {
                             let t = addingText.trimmingCharacters(in: .whitespacesAndNewlines)
                             guard !t.isEmpty else { return }
@@ -1015,120 +1653,287 @@ struct DayCardViewNew: View {
                             addingFieldFocused = true
                             Haptics.light()
                         }
+                    
+                    Spacer()
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(DesignSystem.surfaceContainerHigh.opacity(0.5))
+                )
+                .padding(.horizontal, 16)
             }
+            .padding(.bottom, 16)
         }
-        .background(DesignSystem.cardBackground)
-        .cornerRadius(DesignSystem.cardCorner)
+        .background(DesignSystem.surfaceContainerLow)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: DesignSystem.cardCorner)
-                .stroke(DesignSystem.cardBorder, lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(isDropTargeted ? DesignSystem.primary : Color.clear, lineWidth: 2)
         )
-        // .shadow(color: DesignSystem.shadowColor, radius: DesignSystem.shadowRadius, x: 0, y: 8)
+        .onDrop(of: [.text], isTargeted: $isDropTargeted, perform: handleDropToCard)
     }
 }
 
 struct TodoItemRowNew: View {
+    private enum SwipeInteractionAxis {
+        case undecided
+        case horizontal
+        case vertical
+    }
+
     @Environment(\.modelContext) private var modelContext
     @Bindable var item: TodoItemV3
     var onContinue: () -> Void
-    var onEdit: () -> Void // 新增回调
-    var onComplete: (CGPoint) -> Void // 新增完成回调
-    @State private var checkboxFrame: CGRect = .zero // 存储复选框位置
-    
+    var onEdit: () -> Void
+    var onComplete: (CGPoint) -> Void
+    @State private var ringFrame: CGRect = .zero
+    @State private var isHovered = false
+    @State private var swipeOffset: CGFloat = 0
+    @State private var restingSwipeOffset: CGFloat = 0
+    @State private var swipeInteractionAxis: SwipeInteractionAxis = .undecided
+
+    private let swipeActionWidth: CGFloat = 64
+    private let swipeActionSpacing: CGFloat = 10
+
+    private var totalSwipeActionWidth: CGFloat {
+        (swipeActionWidth * 2) + swipeActionSpacing
+    }
+
+    private var priorityColor: Color {
+        item.priority == .none ? DesignSystem.outline : item.priority.color
+    }
+
+    private var isSwipeActionsOpen: Bool {
+        restingSwipeOffset < 0
+    }
+
+    private var isSwipeActionsVisible: Bool {
+        isSwipeActionsOpen || swipeOffset < -4
+    }
+
+    private func updateSwipeInteractionAxis(for value: DragGesture.Value) {
+        guard swipeInteractionAxis == .undecided else { return }
+
+        let horizontalTranslation = value.translation.width
+        let verticalTranslation = value.translation.height
+        let horizontalDistance = abs(horizontalTranslation)
+        let verticalDistance = abs(verticalTranslation)
+
+        if isSwipeActionsOpen {
+            if horizontalDistance > 10, horizontalDistance > verticalDistance * 1.2 {
+                swipeInteractionAxis = .horizontal
+            } else if verticalDistance > 8 {
+                swipeInteractionAxis = .vertical
+            }
+            return
+        }
+
+        if horizontalTranslation < -14, horizontalDistance > verticalDistance * 1.6 {
+            swipeInteractionAxis = .horizontal
+        } else if verticalDistance > 8 {
+            swipeInteractionAxis = .vertical
+        }
+    }
+
+    private func toggleCompletion() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            item.progress = item.isDone ? 0 : 100
+        }
+        if item.isDone {
+            let centerPoint = CGPoint(x: ringFrame.midX, y: ringFrame.midY)
+            onComplete(centerPoint)
+        }
+        try? modelContext.save()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private func closeSwipeActions() {
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.86)) {
+            swipeOffset = 0
+            restingSwipeOffset = 0
+        }
+    }
+
+    private func openSwipeActions() {
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.86)) {
+            swipeOffset = -totalSwipeActionWidth
+            restingSwipeOffset = -totalSwipeActionWidth
+        }
+    }
+
+    private func deleteItem() {
+        closeSwipeActions()
+        withAnimation {
+            modelContext.delete(item)
+        }
+        try? modelContext.save()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    item.isDone.toggle()
-                    item.completedAt = item.isDone ? Date() : nil
-                }
-                if item.isDone {
-                    // 使用存储的中心点作为爆发点
-                    let centerPoint = CGPoint(x: checkboxFrame.midX, y: checkboxFrame.midY)
-                    onComplete(centerPoint)
-                }
-                
-                // 强制保存以确保 Widget 能读到最新数据
-                try? modelContext.save()
-                
-                // 刷新 Widget
-                WidgetCenter.shared.reloadAllTimelines()
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(item.priority == .none ? (item.isDone ? DesignSystem.checkedColor : DesignSystem.textTertiary) : item.priority.color, lineWidth: 2)
-                        .frame(width: 22, height: 22)
-                    
-                    if item.isDone {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(item.priority == .none ? DesignSystem.checkedColor : item.priority.color)
-                            .frame(width: 22, height: 22)
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white)
-                    } else if item.priority != .none {
-                         RoundedRectangle(cornerRadius: 6)
-                            .fill(item.priority.color.opacity(0.1))
-                            .frame(width: 22, height: 22)
+        ZStack(alignment: .trailing) {
+            if isSwipeActionsVisible {
+                HStack(spacing: swipeActionSpacing) {
+                    Button {
+                        Haptics.light()
+                        closeSwipeActions()
+                        onEdit()
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 19, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: swipeActionWidth)
+                        .frame(maxHeight: .infinity)
+                        .background(DesignSystem.secondary)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
-                }
-                .background(
-                    GeometryReader { geo in
-                        Color.clear
-                            .onChange(of: geo.frame(in: .global)) { oldVal, newVal in
-                                checkboxFrame = newVal
-                            }
-                            .onAppear {
-                                checkboxFrame = geo.frame(in: .global)
-                            }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        deleteItem()
+                    } label: {
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: swipeActionWidth)
+                        .frame(maxHeight: .infinity)
+                        .background(DesignSystem.error)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
-                )
+                    .buttonStyle(.plain)
+                }
+                .transition(.opacity)
+                .padding(.leading, 32)
             }
-            .buttonStyle(.plain)
-            // .padding(.top, 3) // 移除顶部内边距，让复选框自然顶对齐
-            
-            if let idx = item.chainIndex {
-                if idx >= 2 {
-                    HStack(spacing: 2) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 10))
-                        Text("\(idx)")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.orange.opacity(0.15))
-                    .foregroundColor(.orange)
-                    .clipShape(Capsule())
-                    .overlay(
-                        Capsule()
-                            .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+
+            HStack(spacing: 10) {
+                // 环形进度圈
+                // 轻点：直接完成/取消 (0 <-> 100)
+                // 长按：打开编辑面板精确设置进度
+                ProgressRing(progress: item.progress, color: priorityColor)
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear
+                                .onAppear {
+                                    ringFrame = geo.frame(in: .global)
+                                }
+                                .onChange(of: geo.frame(in: .global)) { _, newValue in
+                                    ringFrame = newValue
+                                }
+                        }
                     )
-                    .padding(.top, 1) // 微调对齐
+                    .overlay {
+                        Button(action: toggleCompletion) {
+                            Color.clear
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .onLongPressGesture {
+                            Haptics.medium()
+                            onEdit()
+                        }
+                    }
+
+                // 任务内容
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        // 火焰标记（延续次数）
+                        if let idx = item.chainIndex, idx >= 2 {
+                            HStack(spacing: 2) {
+                                Image(systemName: "flame.fill")
+                                    .font(.system(size: 10))
+                                Text("\(idx)")
+                                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(DesignSystem.tertiaryContainer)
+                            .foregroundColor(DesignSystem.tertiary)
+                            .clipShape(Capsule())
+                        }
+
+                        Text(item.title)
+                            .font(.system(size: 14, weight: item.isDone ? .regular : .medium, design: .rounded))
+                            .strikethrough(item.isDone)
+                            .foregroundColor(item.isDone ? DesignSystem.textTertiary : DesignSystem.onSurface)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                }
+
+                Spacer()
+
+                // 悬停时显示编辑按钮
+                if isHovered {
+                    Button {
+                        onEdit()
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(DesignSystem.textSecondary)
+                            .frame(width: 32, height: 32)
+                            .background(DesignSystem.surfaceContainerHighest)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.opacity.combined(with: .scale))
                 }
             }
-            
-            Text(item.title)
-                .font(.system(size: 16, weight: item.isDone ? .regular : .medium, design: .rounded))
-                .strikethrough(item.isDone)
-                .foregroundColor(item.isDone ? DesignSystem.textTertiary : DesignSystem.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 1) // 微调对齐，使其与复选框视觉居中
-                .contentShape(Rectangle()) // 扩大点击区域
-                .onTapGesture {
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(DesignSystem.surfaceContainerLowest)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(DesignSystem.outlineVariant.opacity(0.15), lineWidth: 0.5)
+                    )
+            )
+            .contentShape(Rectangle())
+            .offset(x: swipeOffset)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 22, coordinateSpace: .local)
+                    .onChanged { value in
+                        updateSwipeInteractionAxis(for: value)
+
+                        guard swipeInteractionAxis == .horizontal else { return }
+
+                        let proposedOffset = restingSwipeOffset + value.translation.width
+                        swipeOffset = min(0, max(-totalSwipeActionWidth, proposedOffset))
+                    }
+                    .onEnded { value in
+                        defer { swipeInteractionAxis = .undecided }
+
+                        guard swipeInteractionAxis == .horizontal else {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.86)) {
+                                swipeOffset = restingSwipeOffset
+                            }
+                            return
+                        }
+
+                        let proposedOffset = restingSwipeOffset + value.translation.width
+                        let shouldOpen = proposedOffset < -(totalSwipeActionWidth * 0.45)
+
+                        if shouldOpen {
+                            openSwipeActions()
+                        } else {
+                            closeSwipeActions()
+                        }
+                    }
+            )
+            .onTapGesture {
+                if isSwipeActionsOpen {
+                    closeSwipeActions()
+                } else {
                     onEdit()
                 }
-            
-            Spacer()
-        }
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive) {
-                withAnimation { modelContext.delete(item) }
-            } label: {
-                Label("删除", systemImage: "trash")
+            }
+            .onLongPressGesture {
+                Haptics.light()
+                onEdit()
             }
         }
     }

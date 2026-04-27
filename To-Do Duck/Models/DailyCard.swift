@@ -7,12 +7,9 @@ final class DailyCardV3 {
     var date: Date = Date()
     var createdAt: Date = Date()
     var customTitle: String? = nil
-    @Relationship(deleteRule: .cascade) var items: [TodoItemV3] = []
+    @Relationship(deleteRule: .cascade) var items: [TodoItemV3]? = []
 
     init(date: Date) {
-        self.id = UUID()
         self.date = Calendar.current.startOfDay(for: date)
-        self.createdAt = Date()
-        self.customTitle = nil
     }
 }

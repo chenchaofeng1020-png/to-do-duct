@@ -31,7 +31,7 @@ struct IOSAppView: View {
                     Text("设置")
                 }
             }
-            .tint(.black)
+            .tint(DesignSystem.primary)
         }
     }
 }
@@ -47,7 +47,7 @@ struct SimpleNavigationView<Content: View>: View {
 
 struct TodosView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \DailyCardV3.date, order: .reverse) private var cards: [DailyCardV3]
+    @Query(sort: [SortDescriptor(\DailyCardV3.date, order: .reverse), SortDescriptor(\DailyCardV3.createdAt, order: .reverse)]) private var cards: [DailyCardV3]
     @State private var searchText: String = ""
     @State private var addingTextByCard: [UUID: String] = [:]
     @State private var showTargetPickerForItem: TodoItemV3?
@@ -126,15 +126,30 @@ struct TodosView: View {
         return cards.filter { c in
             let title = DateFormatter.localizedString(from: c.date, dateStyle: .long, timeStyle: .none).lowercased()
             if title.contains(keyword) { return true }
-            return c.items.contains { $0.title.lowercased().contains(keyword) }
+            return c.items?.contains { $0.title.lowercased().contains(keyword) } ?? false
         }
     }
 
     private func createTodayCard() {
-        let today = Calendar.current.startOfDay(for: Date())
-        let descriptor = FetchDescriptor<DailyCardV3>(predicate: #Predicate { $0.date == today })
-        if (try? modelContext.fetch(descriptor).first) != nil { return }
-        let card = DailyCardV3(date: today)
+        let calendar = Calendar.current
+        
+        let descriptor = FetchDescriptor<DailyCardV3>(sortBy: [SortDescriptor(\DailyCardV3.date, order: .reverse), SortDescriptor(\DailyCardV3.createdAt, order: .reverse)])
+        let allCards = (try? modelContext.fetch(descriptor)) ?? []
+        
+        guard let latestCard = allCards.first else {
+            let today = calendar.startOfDay(for: Date())
+            let card = DailyCardV3(date: today)
+            modelContext.insert(card)
+            return
+        }
+        
+        let nextDate = calendar.date(byAdding: .day, value: 1, to: latestCard.date) ?? Date()
+        let nextDayStart = calendar.startOfDay(for: nextDate)
+        
+        let existingDescriptor = FetchDescriptor<DailyCardV3>(predicate: #Predicate { $0.date == nextDayStart })
+        if (try? modelContext.fetch(existingDescriptor).first) != nil { return }
+        
+        let card = DailyCardV3(date: nextDayStart)
         modelContext.insert(card)
     }
 
@@ -161,7 +176,7 @@ struct DayCardView: View {
                 Spacer()
             }
             VStack(spacing: 10) {
-                ForEach(card.items) { item in
+                ForEach(card.items ?? []) { item in
                     TodoItemRow(item: item) {
                         onContinue(item)
                     }

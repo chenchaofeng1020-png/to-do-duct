@@ -20,138 +20,147 @@ struct MacMemoHomeView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header Area (Fixed)
-            HStack {
-                Text("memos")
-                    .font(.largeTitle)
-                    .bold()
-                
-                Spacer()
-                
-                // Search Bar
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.secondary)
-                    
-                    TextField("search_memo_placeholder", text: $searchText)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 14))
-                    
-                    if !searchText.isEmpty {
-                        Button(action: { searchText = "" }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(Color(hex: "efefef"))
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.secondary.opacity(0.1), lineWidth: 0.5)
-                )
-                .frame(width: 280)
-            }
-            .padding(.horizontal)
-            .padding(.top, 20)
-            .padding(.bottom, 10)
-            .frame(maxWidth: 650)
-            .background(DesignSystem.warmBackground)
             
-            // Top Input Area (Fixed)
-            VStack(spacing: 0) {
-                ScrollView {
-                    TextField("input_memo_placeholder", text: $inputText, axis: .vertical)
-                        .font(.system(size: 16, design: .rounded))
-                        .textFieldStyle(.plain)
-                        .focused($isInputFocused)
-                        .frame(minHeight: 80, alignment: .top)
-                        .onSubmit {
-                             // TextField with axis: .vertical uses Return for new line.
-                             // Cmd+Enter needs to be handled via other means if needed,
-                             // or we rely on the button.
-                             // But actually, we can add a keyboard shortcut to the View.
-                        }
-                }
-                .scrollIndicators(.hidden)
-                .frame(height: 150) // Fixed height for the input area
-                .padding(.bottom, 8)
-                
+            // Scrollable Content
+            ScrollView {
+                // Header Area (Moved)
                 HStack {
-                    Text("shortcut_save_memo")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text("memos")
+                        .font(.largeTitle)
+                        .bold()
                     
                     Spacer()
                     
-                    Button(action: saveMemo) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray.opacity(0.3) : DesignSystem.checkedColor)
+                    // Search Bar
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.secondary)
+                        
+                        TextField("search_memo_placeholder", text: $searchText)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 14))
+                        
+                        if !searchText.isEmpty {
+                            Button(action: { searchText = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .keyboardShortcut(.return, modifiers: .command)
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .background(DesignSystem.cardBackground)
-            .cornerRadius(DesignSystem.cardCorner)
-            .overlay(
-                RoundedRectangle(cornerRadius: DesignSystem.cardCorner)
-                    .stroke(DesignSystem.cardBorder, lineWidth: 0.5)
-            )
-            .padding(.horizontal)
-            .padding(.bottom, 20)
-            .frame(maxWidth: 650)
-            .frame(maxWidth: .infinity) // Center content
-            .zIndex(1)
-            
-            // Scrollable Memo List
-            ScrollView {
-                LazyVStack(spacing: 20) {
-                    ForEach(filteredMemos) { memo in
-                        MacMemoCardView(memo: memo, onEdit: {
-                            selectedMemo = memo
-                        }, onDelete: {
-                            withAnimation {
-                                modelContext.delete(memo)
-                            }
-                        })
-                            .onTapGesture {
-                                selectedMemo = memo
-                            }
-                            .contextMenu {
-                                Button {
-                                    NSPasteboard.general.clearContents()
-                                    NSPasteboard.general.setString(memo.content, forType: .string)
-                                } label: {
-                                    Label("copy", systemImage: "doc.on.doc")
-                                }
-                                
-                                Button(role: .destructive) {
-                                    withAnimation {
-                                        modelContext.delete(memo)
-                                    }
-                                } label: {
-                                    Label("delete", systemImage: "trash")
-                                }
-                            }
-                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(DesignSystem.cardBackground)
+                    .cornerRadius(12)
+                    .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(DesignSystem.cardBorder, lineWidth: 0.5)
+                    )
+                    .frame(width: 280)
                 }
                 .padding(.horizontal)
+                .padding(.top, 20)
+                .padding(.bottom, 10)
+                .frame(maxWidth: 650)
+                .frame(maxWidth: .infinity)
+                .background(DesignSystem.background)
+
+                LazyVStack(spacing: 20) {
+                    Section {
+                        ForEach(filteredMemos) { memo in
+                            MacMemoCardView(memo: memo, onEdit: {
+                                selectedMemo = memo
+                            }, onDelete: {
+                                withAnimation {
+                                    modelContext.delete(memo)
+                                }
+                            })
+                                .onTapGesture {
+                                    selectedMemo = memo
+                                }
+                                .contextMenu {
+                                    Button {
+                                        NSPasteboard.general.clearContents()
+                                        NSPasteboard.general.setString(memo.content, forType: .string)
+                                    } label: {
+                                        Label("copy", systemImage: "doc.on.doc")
+                                    }
+                                    
+                                    Button(role: .destructive) {
+                                        withAnimation {
+                                            modelContext.delete(memo)
+                                        }
+                                    } label: {
+                                        Label("delete", systemImage: "trash")
+                                    }
+                                }
+                        }
+                    } header: {
+                        // Sticky Input Area
+                        VStack(spacing: 0) {
+                            ZStack(alignment: .topLeading) {
+                                if inputText.isEmpty {
+                                    Text("input_memo_placeholder")
+                                        .font(.system(size: 16, design: .rounded))
+                                        .foregroundColor(DesignSystem.textTertiary)
+                                        .padding(.top, 8)
+                                        .padding(.leading, 5)
+                                        .allowsHitTesting(false)
+                                }
+                                
+                                MacMemoEditor(text: $inputText)
+                                    .frame(minHeight: (isInputFocused || !inputText.isEmpty) ? 80 : 30, alignment: .top)
+                                    .focused($isInputFocused)
+                            }
+                            .frame(height: (isInputFocused || !inputText.isEmpty) ? 150 : 50)
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isInputFocused)
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: inputText.isEmpty)
+                            .padding(.bottom, 8)
+                            
+                            HStack {
+                                Text("shortcut_save_memo")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .opacity((isInputFocused || !inputText.isEmpty) ? 1 : 0)
+                                
+                                Spacer()
+                                
+                                Button(action: saveMemo) {
+                                    Image(systemName: "arrow.up.circle.fill")
+                                        .font(.system(size: 28))
+                                        .foregroundColor(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray.opacity(0.3) : DesignSystem.primary)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                .keyboardShortcut(.return, modifiers: .command)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .background(DesignSystem.cardBackground)
+                        .cornerRadius(DesignSystem.cardCorner)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.cardCorner)
+                                .stroke(DesignSystem.cardBorder, lineWidth: 0.5)
+                        )
+                        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 5)
+                        // Removed extra bottom padding to reduce gap
+                        .frame(maxWidth: 650)
+                        .frame(maxWidth: .infinity)
+                        .background(DesignSystem.background) // Mask content behind header
+                        .padding(.top, 10) // Extra padding top within scroll view
+                    }
+                }
+                .padding(.horizontal, 16)
                 .padding(.bottom, 40)
                 .frame(maxWidth: 650)
-                .frame(maxWidth: .infinity) // Center content
+                .frame(maxWidth: .infinity)
+                .thinScrollbar()
             }
         }
-        .background(DesignSystem.warmBackground)
+        .background(DesignSystem.background)
         // .navigationTitle("Memos") // Removed standard title to use custom header
         .sheet(item: $selectedMemo) { memo in
             // Reusing existing logic for editing if available, or simple edit sheet
@@ -214,11 +223,12 @@ struct MacMemoCardView: View {
                         .contentShape(Rectangle())
                 }
                 .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
                 .frame(width: 24, height: 24)
             }
             
             Text(memo.content)
-                .font(.system(size: 16, weight: .regular, design: .rounded))
+                .font(.system(size: 14, weight: .regular, design: .rounded))
                 .foregroundColor(DesignSystem.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled) // Allow text selection
@@ -262,6 +272,65 @@ struct MemoEditSheet: View {
         }
         .frame(width: 500, height: 400)
         .background(DesignSystem.softBackground)
+    }
+}
+
+struct MacMemoEditor: NSViewRepresentable {
+    @Binding var text: String
+    
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.drawsBackground = false
+        scrollView.borderType = .noBorder
+        scrollView.hasVerticalScroller = false
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+        
+        let textView = NSTextView()
+        textView.autoresizingMask = [.width]
+        textView.delegate = context.coordinator
+        textView.drawsBackground = false
+        
+        // Match standard font with rounded design
+        if let descriptor = NSFont.systemFont(ofSize: 16).fontDescriptor.withDesign(.rounded) {
+            textView.font = NSFont(descriptor: descriptor, size: 16)
+        } else {
+            textView.font = .systemFont(ofSize: 16)
+        }
+        
+        textView.isRichText = false
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.textContainer?.widthTracksTextView = true
+        // Match placeholder top padding (8pt)
+        textView.textContainerInset = NSSize(width: 0, height: 8)
+        
+        scrollView.documentView = textView
+        return scrollView
+    }
+    
+    func updateNSView(_ nsView: NSScrollView, context: Context) {
+        guard let textView = nsView.documentView as? NSTextView else { return }
+        if textView.string != text {
+            textView.string = text
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, NSTextViewDelegate {
+        var parent: MacMemoEditor
+        
+        init(_ parent: MacMemoEditor) {
+            self.parent = parent
+        }
+        
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            self.parent.text = textView.string
+        }
     }
 }
 #endif

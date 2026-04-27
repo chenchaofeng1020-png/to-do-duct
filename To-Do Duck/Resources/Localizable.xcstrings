@@ -10,6 +10,9 @@
     "," : {
 
     },
+    "%@" : {
+
+    },
     "%@ (%@)" : {
       "localizations" : {
         "en" : {
@@ -21,6 +24,19 @@
       }
     },
     "%lld" : {
+
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld%%" : {
 
     },
     "👋" : {
@@ -78,9 +94,6 @@
         }
       }
     },
-    "Advanced Debug Info" : {
-
-    },
     "allow_past_continuation" : {
       "localizations" : {
         "en" : {
@@ -100,8 +113,21 @@
     "App Icon Preview" : {
 
     },
-    "App Info" : {
-
+    "app_info" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Info"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于"
+          }
+        }
+      }
     },
     "cancel" : {
       "localizations" : {
@@ -153,9 +179,6 @@
         }
       }
     },
-    "Check Cloud Data" : {
-
-    },
     "checking_status" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -189,14 +212,27 @@
         }
       }
     },
+    "choice_target_date" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choice Target Date"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未来一月"
+          }
+        }
+      }
+    },
     "Close" : {
 
     },
-    "Cloud Enabled (App Init):" : {
-
-    },
-    "confirm" : {
-      "extractionState" : "stale",
+    "confirm_continuation" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -207,23 +243,23 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "确认"
+            "value" : "确认延后"
           }
         }
       }
     },
-    "confirm_continuation" : {
+    "confirm_repeat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Confirm Move"
+            "value" : "Confirm Repeat"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "确认延续"
+            "value" : "确认重复"
           }
         }
       }
@@ -233,32 +269,22 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Content Copied"
+            "value" : "Copied to clipboard"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "内容已复制～"
+            "value" : "已复制到剪贴板"
           }
         }
       }
     },
     "continue_tomorrow" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue Tomorrow"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "延续到明天"
-          }
-        }
-      }
+
+    },
+    "continue_tomorrow_with_progress %lld" : {
+
     },
     "copy" : {
       "localizations" : {
@@ -279,24 +305,30 @@
     "Copy Content" : {
 
     },
+    "create_memo" : {
+
+    },
     "create_today" : {
+
+    },
+    "create_today_hint" : {
+
+    },
+    "custom_date" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start Today"
+            "value" : "Custom"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "创建今天"
+            "value" : "自定义"
           }
         }
       }
-    },
-    "create_today_hint" : {
-
     },
     "data_sync" : {
       "localizations" : {
@@ -316,17 +348,34 @@
     },
     "date_format" : {
       "comment" : "Date format string",
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "EEE, MMM d, yyyy"
+            "value" : "EEEE, MMM d, yyyy"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yyyy-MM-dd EEEE"
+            "value" : "yyyy年MM月dd日 EEEE"
+          }
+        }
+      }
+    },
+    "day_after_tomorrow" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day After Tomorrow"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到后天"
           }
         }
       }
@@ -364,31 +413,37 @@
         }
       }
     },
-    "delete_card_message" : {
-      "extractionState" : "stale",
+    "delete_memo" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Are you sure you want to delete this card and all its tasks? This cannot be undone."
+            "value" : "Delete Memo"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "确定要删除这张卡片及其所有待办事项吗？此操作不可恢复。"
+            "value" : "删除备忘"
           }
         }
       }
     },
-    "delete_memo" : {
-
-    },
     "delete_memo_confirm" : {
-
-    },
-    "Development" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to delete this memo? This action cannot be undone."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要删除这条备忘吗？此操作不可恢复。"
+          }
+        }
+      }
     },
     "done" : {
       "localizations" : {
@@ -405,6 +460,9 @@
           }
         }
       }
+    },
+    "drag_to_reorder" : {
+
     },
     "edit" : {
       "localizations" : {
@@ -423,20 +481,7 @@
       }
     },
     "edit_memo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edit Memo"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "编辑备忘"
-          }
-        }
-      }
+
     },
     "edit_title" : {
       "localizations" : {
@@ -459,7 +504,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edit Task"
+            "value" : "Edit Todo"
           }
         },
         "zh-Hans" : {
@@ -471,17 +516,36 @@
       }
     },
     "empty_for_date" : {
+
+    },
+    "end_of_month" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Leave empty to show date"
+            "value" : "End of Month"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "为空则默认显示日期"
+            "value" : "到本月"
+          }
+        }
+      }
+    },
+    "end_of_week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End of Week"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到本周"
           }
         }
       }
@@ -503,37 +567,36 @@
       }
     },
     "enter_todo_content" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What needs to be done?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "输入待办事项内容..."
-          }
-        }
-      }
-    },
-    "Environment:" : {
-
-    },
-    "generating_preview" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Generating preview..."
+            "value" : "Enter todo content"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "生成预览中..."
+            "value" : "输入待办内容"
+          }
+        }
+      }
+    },
+    "fri" : {
+      "comment" : "Friday abbreviation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "FRI"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "周五"
           }
         }
       }
@@ -544,7 +607,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Good Afternoon"
+            "value" : "Good afternoon"
           }
         },
         "zh-Hans" : {
@@ -561,7 +624,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Good Evening"
+            "value" : "Good evening"
           }
         },
         "zh-Hans" : {
@@ -578,7 +641,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Good Morning"
+            "value" : "Good morning"
           }
         },
         "zh-Hans" : {
@@ -596,36 +659,10 @@
 
     },
     "icloud_check_failed_title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cannot Enable Sync"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法开启同步"
-          }
-        }
-      }
+
     },
     "icloud_not_logged_in" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iCloud is not logged in. Please sign in to iCloud in Settings and try again."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检测到未登录 iCloud。请在系统设置中登录 iCloud 后再试。"
-          }
-        }
-      }
+
     },
     "icloud_sync" : {
       "localizations" : {
@@ -638,7 +675,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud 同步"
+            "value" : "iCloud同步"
           }
         }
       }
@@ -648,32 +685,29 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Data automatically backs up to iCloud"
+            "value" : "Enable to sync data across Apple devices"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "数据将自动备份到 iCloud"
+            "value" : "开启后即可在苹果多设备间同步数据"
           }
         }
       }
-    },
-    "Initialize Cloud Schema" : {
-
     },
     "input_memo_placeholder" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What's on your mind..."
+            "value" : "Capture your ideas..."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "现在的想法是..."
+            "value" : "记录点什么..."
           }
         }
       }
@@ -706,13 +740,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Record your idea..."
+            "value" : "Enter your memo content..."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "记录当下的想法..."
+            "value" : "输入备忘内容..."
           }
         }
       }
@@ -734,21 +768,26 @@
         }
       }
     },
-    "network_error" : {
+    "mon" : {
+      "comment" : "Monday abbreviation",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Network unavailable. Please check your connection."
+            "state" : "new",
+            "value" : "MON"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "网络不可用，请检查网络连接。"
+            "value" : "周一"
           }
         }
       }
+    },
+    "network_error" : {
+
     },
     "new_day" : {
       "localizations" : {
@@ -767,6 +806,7 @@
       }
     },
     "next_monday" : {
+      "comment" : "Next Monday",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -782,8 +822,38 @@
         }
       }
     },
-    "NO" : {
-
+    "next_month" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Month"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "到下月"
+          }
+        }
+      }
+    },
+    "next_week" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Week"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未来一周"
+          }
+        }
+      }
     },
     "no_memos_yet" : {
       "localizations" : {
@@ -800,9 +870,6 @@
           }
         }
       }
-    },
-    "Note: Development builds cannot sync with App Store (Production) builds." : {
-
     },
     "ok" : {
       "comment" : "OK button",
@@ -888,6 +955,93 @@
         }
       }
     },
+    "repeat_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task will be automatically created daily until:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在开启新的一天时，如果有已设置的重复任务，会自动创建一条任务～"
+          }
+        }
+      }
+    },
+    "repeat_end_date" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End Date"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "截止日期"
+          }
+        }
+      }
+    },
+    "repeat_task_active" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeating Task"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在重复"
+          }
+        }
+      }
+    },
+    "repeat_task_indicator" : {
+
+    },
+    "repeat_task_setting" : {
+
+    },
+    "repeat_task_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat Task"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重复任务"
+          }
+        }
+      }
+    },
+    "repeat_until" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repeat Until"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重复截止至"
+          }
+        }
+      }
+    },
     "reset_confirm" : {
       "localizations" : {
         "en" : {
@@ -905,6 +1059,7 @@
       }
     },
     "reset_data_description" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -921,6 +1076,7 @@
       }
     },
     "reset_local_data_button" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -997,6 +1153,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重启生效"
+          }
+        }
+      }
+    },
+    "sat" : {
+      "comment" : "Saturday abbreviation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SAT"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "周六"
           }
         }
       }
@@ -1122,7 +1296,20 @@
       }
     },
     "share_memo_desc" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share memo content as text"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以文本形式分享备忘内容"
+          }
+        }
+      }
     },
     "share_via" : {
       "localizations" : {
@@ -1159,8 +1346,21 @@
     "Signed in with iCloud" : {
 
     },
-    "Store Path:" : {
-
+    "stop_repeat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop Repeating"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止重复"
+          }
+        }
+      }
     },
     "style_dark" : {
       "localizations" : {
@@ -1210,6 +1410,24 @@
         }
       }
     },
+    "sun" : {
+      "comment" : "Sunday abbreviation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SUN"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "周日"
+          }
+        }
+      }
+    },
     "sync_enabled" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1228,6 +1446,7 @@
       }
     },
     "sync_init_failed_message" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1263,11 +1482,23 @@
         }
       }
     },
-    "Test App Group Access" : {
-
-    },
-    "Test Cloud Write (Direct)" : {
-
+    "thu" : {
+      "comment" : "Thursday abbreviation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "THU"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "周四"
+          }
+        }
+      }
     },
     "To-Do Duck" : {
 
@@ -1288,7 +1519,26 @@
         }
       }
     },
+    "todos" : {
+      "comment" : "Todo Tab Title",
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "待办"
+          }
+        }
+      }
+    },
     "tomorrow" : {
+      "comment" : "Tomorrow",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1300,6 +1550,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "明天"
+          }
+        }
+      }
+    },
+    "tue" : {
+      "comment" : "Tuesday abbreviation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "TUE"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "周二"
+          }
+        }
+      }
+    },
+    "update_repeat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Repeat"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新重复"
           }
         }
       }
@@ -1323,8 +1607,23 @@
         }
       }
     },
-    "Version" : {
-
+    "wed" : {
+      "comment" : "Wednesday abbreviation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "WED"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "周三"
+          }
+        }
+      }
     },
     "welcome_message" : {
       "comment" : "Welcome message",
@@ -1377,9 +1676,6 @@
         }
       }
     },
-    "YES" : {
-
-    },
     "yesterday" : {
       "localizations" : {
         "en" : {
@@ -1399,6 +1695,15 @@
     "不允许选择过去日期" : {
 
     },
+    "也可以直接输入一个还没安排日期的待办。" : {
+
+    },
+    "任务内容" : {
+
+    },
+    "优先级" : {
+
+    },
     "允许选择过去日期延续" : {
 
     },
@@ -1406,6 +1711,9 @@
 
     },
     "删除卡片" : {
+
+    },
+    "加载更多中…" : {
 
     },
     "取消" : {
@@ -1423,7 +1731,13 @@
     "好的" : {
 
     },
+    "展开收集箱" : {
+
+    },
     "延续规则" : {
+
+    },
+    "开启新的一天" : {
 
     },
     "归档" : {
@@ -1435,7 +1749,16 @@
     "待办事项" : {
 
     },
+    "把待办拖到这里暂存" : {
+
+    },
     "搜索…" : {
+
+    },
+    "收起收集箱" : {
+
+    },
+    "收集箱" : {
 
     },
     "数据同步" : {
@@ -1459,6 +1782,9 @@
     "继续一天" : {
 
     },
+    "继续上滑查看更早的待办" : {
+
+    },
     "置顶" : {
 
     },
@@ -1468,10 +1794,19 @@
     "请选择晚于该事项所在日期的目标卡片。" : {
 
     },
+    "输入后回车↩︎" : {
+
+    },
     "输入备忘生成卡片" : {
 
     },
     "输入待办回车↩︎" : {
+
+    },
+    "还没定好时间的事情放这里" : {
+
+    },
+    "进度" : {
 
     },
     "选择目标日期" : {

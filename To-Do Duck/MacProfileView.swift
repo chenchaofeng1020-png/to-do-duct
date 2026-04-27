@@ -5,6 +5,8 @@ import CloudKit
 struct MacProfileView: View {
     @AppStorage("allowPastContinuation") private var allowPastContinuation: Bool = false
     
+    @StateObject private var logger = AppLogger.shared
+    
     // Manually manage sync state to support fallback
     @State private var isCloudSyncEnabled: Bool = false
     
@@ -40,7 +42,7 @@ struct MacProfileView: View {
                             .foregroundColor(.secondary)
                     }
                     .padding()
-                    .background(Color.white)
+                    .background(DesignSystem.cardBackground)
                     .cornerRadius(10)
                     .shadow(color: DesignSystem.shadowColor, radius: 4, x: 0, y: 2)
                 }
@@ -93,10 +95,12 @@ struct MacProfileView: View {
                         }
                     }
                     .padding()
-                    .background(Color.white)
+                    .background(DesignSystem.cardBackground)
                     .cornerRadius(10)
                     .shadow(color: DesignSystem.shadowColor, radius: 4, x: 0, y: 2)
                     
+                    // Debug features hidden for production
+                    /*
                     if isCloudSyncEnabled {
                         // Diagnostic Info and Manual Reset
                         if UserDefaults.standard.bool(forKey: "syncInitializationFailed") {
@@ -255,6 +259,7 @@ struct MacProfileView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     }
+                    */
                 }
                 
                 // Preferences Section
@@ -275,29 +280,74 @@ struct MacProfileView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white)
+                    .background(DesignSystem.cardBackground)
                     .cornerRadius(10)
                     .shadow(color: DesignSystem.shadowColor, radius: 4, x: 0, y: 2)
                 }
                 
                 // App Info Section
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("App Info")
+                    Text("app_info")
                         .font(.headline)
                         .foregroundStyle(.secondary)
                         .padding(.leading, 4)
                     
                     HStack {
-                        Text("Version")
+                        Text("version")
                         Spacer()
                         Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
                             .foregroundColor(.secondary)
                     }
                     .padding()
+                    .background(DesignSystem.cardBackground)
+                    .cornerRadius(10)
+                    .shadow(color: DesignSystem.shadowColor, radius: 4, x: 0, y: 2)
+                }
+                
+                // Debug Logs Section - Hidden for production
+                /*
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Debug Logs")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Clear") {
+                            logger.clear()
+                        }
+                        .font(.caption)
+                        .buttonStyle(.borderless)
+                    }
+                    .padding(.leading, 4)
+                    
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(logger.logs, id: \.timestamp) { log in
+                                HStack(alignment: .top, spacing: 8) {
+                                    Text(log.level.icon)
+                                        .font(.system(size: 12))
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(log.message)
+                                            .font(.caption)
+                                            .textSelection(.enabled)
+                                        Text("\(log.timestamp.formatted(date: .omitted, time: .standard))")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .padding(8)
+                                .background(log.level.color.opacity(0.1))
+                                .cornerRadius(6)
+                            }
+                        }
+                        .padding()
+                    }
+                    .frame(maxHeight: 400)
                     .background(Color.white)
                     .cornerRadius(10)
                     .shadow(color: DesignSystem.shadowColor, radius: 4, x: 0, y: 2)
                 }
+                */
             }
             .padding()
             .frame(maxWidth: 600) // Limit width for better look
@@ -305,7 +355,7 @@ struct MacProfileView: View {
             .padding(.horizontal)
         }
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-        .background(DesignSystem.warmBackground)
+        .background(DesignSystem.background)
         .navigationTitle("Profile")
         .alert(NSLocalizedString("restart_required_title", comment: ""), isPresented: $showRestartAlert) {
             Button(NSLocalizedString("ok", comment: ""), role: .cancel) {}
@@ -339,44 +389,45 @@ struct MacProfileView: View {
     private func checkiCloudStatus() {
         isChecking = true
         
-        CKContainer(identifier: "iCloud.sdy.tododuck").accountStatus { status, error in
-            DispatchQueue.main.async {
-                self.isChecking = false
-                
-                if let error = error {
-                    self.icloudErrorMessage = "iCloud check failed: \(error.localizedDescription)"
-                    self.showiCloudErrorAlert = true
-                    self.isCloudSyncEnabled = false
-                    return
+        Task {
+            do {
+                let status = try await CKContainer(identifier: "iCloud.sdy.tododuck").accountStatus()
+                await MainActor.run {
+                    isChecking = false
+                    
+                    switch status {
+                    case .available:
+                        print("✅ iCloud Validated")
+                        icloudErrorMessage = ""
+                        showiCloudErrorAlert = false
+                    case .noAccount:
+                        icloudErrorMessage = "No iCloud account found. Please sign in to iCloud in System Settings."
+                        showiCloudErrorAlert = true
+                        isCloudSyncEnabled = false
+                    case .restricted:
+                        icloudErrorMessage = "iCloud access is restricted on this device."
+                        showiCloudErrorAlert = true
+                        isCloudSyncEnabled = false
+                    case .couldNotDetermine:
+                        icloudErrorMessage = "Could not determine iCloud status. Please try again later."
+                        showiCloudErrorAlert = true
+                        isCloudSyncEnabled = false
+                    case .temporarilyUnavailable:
+                        icloudErrorMessage = "iCloud is temporarily unavailable. Please try again later."
+                        showiCloudErrorAlert = true
+                        isCloudSyncEnabled = false
+                    @unknown default:
+                        icloudErrorMessage = "Unknown iCloud status."
+                        showiCloudErrorAlert = true
+                        isCloudSyncEnabled = false
+                    }
                 }
-                
-                switch status {
-                case .available:
-                    // Key Fix: Do NOT show restart alert on every check
-                    // Just clear any errors and let the toggle stay enabled
-                    print("✅ iCloud Validated")
-                    self.icloudErrorMessage = ""
-                    self.showiCloudErrorAlert = false
-                case .noAccount:
-                    self.icloudErrorMessage = "No iCloud account found. Please sign in to iCloud in System Settings."
-                    self.showiCloudErrorAlert = true
-                    self.isCloudSyncEnabled = false
-                case .restricted:
-                    self.icloudErrorMessage = "iCloud access is restricted on this device."
-                    self.showiCloudErrorAlert = true
-                    self.isCloudSyncEnabled = false
-                case .couldNotDetermine:
-                    self.icloudErrorMessage = "Could not determine iCloud status. Please try again later."
-                    self.showiCloudErrorAlert = true
-                    self.isCloudSyncEnabled = false
-                case .temporarilyUnavailable:
-                    self.icloudErrorMessage = "iCloud is temporarily unavailable. Please try again later."
-                    self.showiCloudErrorAlert = true
-                    self.isCloudSyncEnabled = false
-                @unknown default:
-                    self.icloudErrorMessage = "Unknown iCloud status."
-                    self.showiCloudErrorAlert = true
-                    self.isCloudSyncEnabled = false
+            } catch {
+                await MainActor.run {
+                    isChecking = false
+                    icloudErrorMessage = "iCloud check failed: \(error.localizedDescription)"
+                    showiCloudErrorAlert = true
+                    isCloudSyncEnabled = false
                 }
             }
         }

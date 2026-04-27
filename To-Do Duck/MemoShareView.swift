@@ -76,7 +76,7 @@ struct MemoShareSheet: View {
                 HStack(spacing: 8) {
                     ForEach(ShareStyle.allCases) { style in
                         Circle()
-                            .fill(selectedStyle == style ? DesignSystem.checkedColor : Color.gray.opacity(0.3))
+                            .fill(selectedStyle == style ? DesignSystem.primary : Color.gray.opacity(0.3))
                             .frame(width: 8, height: 8)
                             .scaleEffect(selectedStyle == style ? 1.2 : 1.0)
                             .animation(.spring(response: 0.3), value: selectedStyle)
@@ -92,7 +92,7 @@ struct MemoShareSheet: View {
                         HStack {
                             if isProcessing {
                                 ProgressView()
-                                    .tint(DesignSystem.checkedColor)
+                                    .tint(DesignSystem.primary)
                             } else {
                                 Label("save_image", systemImage: "square.and.arrow.down")
                             }
@@ -100,12 +100,12 @@ struct MemoShareSheet: View {
                         .font(.system(size: 16, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(DesignSystem.checkedColor.opacity(0.1))
-                        .foregroundColor(DesignSystem.checkedColor)
+                        .background(DesignSystem.primary.opacity(0.1))
+                        .foregroundColor(DesignSystem.primary)
                         .cornerRadius(16)
                     }
                     .disabled(isProcessing)
-                    
+
                     Button {
                         performAction(save: false)
                     } label: {
@@ -120,7 +120,7 @@ struct MemoShareSheet: View {
                         .font(.system(size: 16, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(DesignSystem.checkedColor)
+                        .background(DesignSystem.primary)
                         .foregroundColor(.white)
                         .cornerRadius(16)
                     }
@@ -202,8 +202,8 @@ struct MemoShareSheet: View {
                 MemoShareTemplateDark(memo: memo)
             }
         }
-        .background(Color.white) // Default background base
-        .drawingGroup() // Flatten for rendering performance
+        .background(DesignSystem.background)
+        .drawingGroup()
     }
 }
 

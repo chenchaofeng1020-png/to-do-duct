@@ -25,19 +25,24 @@ struct WidgetEntryView: View {
 // MARK: - 大号组件 (详细清单)
 struct LargeWidgetView: View {
     var entry: SimpleEntry
+    private let visibleTaskLimit = 5
     
-    // 优先级颜色辅助函数
+    // 优先级颜色辅助函数 - 与App内保持一致
     private func colorForPriority(_ priority: Int) -> Color {
         switch priority {
-        case 3: return .red
-        case 2: return .orange
-        case 1: return .blue
-        default: return DesignSystem.textTertiary
+        case 3: return DesignSystem.error       // 高优先级 - 红色
+        case 2: return Color(hex: "c77a1b")    // 中优先级 - 橙黄色
+        case 1: return DesignSystem.secondary   // 低优先级 - 绿色
+        default: return DesignSystem.outline    // 无优先级 - 灰色
         }
     }
-    
+
+    private var remainingTaskCount: Int {
+        max(entry.totalCount - entry.completedCount - visibleTaskLimit, 0)
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             // 顶部日期区域
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -55,7 +60,7 @@ struct LargeWidgetView: View {
                     .font(.system(size: 32))
                     .foregroundColor(DesignSystem.purple)
             }
-            .padding(.bottom, 20)
+            .padding(.bottom, 14)
             
             // 进度条
             VStack(alignment: .leading, spacing: 6) {
@@ -84,89 +89,85 @@ struct LargeWidgetView: View {
                 }
                 .frame(height: 8)
             }
-            .padding(.bottom, 20)
+            .padding(.bottom, 14)
             
             // 任务列表
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
                 if entry.topTasks.isEmpty {
                     if entry.totalCount > 0 && entry.completedCount == entry.totalCount {
                         // 全部完成
-                        Spacer()
-                        VStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 10) {
                             Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 40))
+                                .font(.system(size: 30))
                                 .foregroundColor(DesignSystem.checkedColor)
                             Text("今日任务全搞定！\n好好休息一下吧~")
-                                .multilineTextAlignment(.center)
-                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .multilineTextAlignment(.leading)
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
                                 .foregroundColor(DesignSystem.textSecondary)
                         }
-                        .frame(maxWidth: .infinity)
-                        Spacer()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         // 无任务
-                        Spacer()
-                        VStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 10) {
                             Image(systemName: "plus.circle.dashed")
-                                .font(.system(size: 40))
+                                .font(.system(size: 30))
                                 .foregroundColor(DesignSystem.textTertiary)
                             Text("点击创建今日卡片")
-                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
                                 .foregroundColor(DesignSystem.textSecondary)
                         }
-                        .frame(maxWidth: .infinity)
-                        Spacer()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 } else {
-                    // 显示前 6 条任务 (大号组件空间更多)
-                    ForEach(entry.topTasks.prefix(6).indices, id: \.self) { index in
+                    // 显示前 5 条任务，给底部留出余量提示空间
+                    ForEach(entry.topTasks.prefix(visibleTaskLimit).indices, id: \.self) { index in
                         let task = entry.topTasks[index]
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             ZStack {
                                 if task.isDone {
                                     // 已完成：实心绿色背景 + 白色勾
-                                    RoundedRectangle(cornerRadius: 5)
-                                        .fill(DesignSystem.checkedColor)
-                                        .frame(width: 20, height: 20)
+                                    Circle()
+                                        .fill(DesignSystem.primary)
+                                        .frame(width: 18, height: 18)
                                     Image(systemName: "checkmark")
-                                        .font(.system(size: 12, weight: .bold))
+                                        .font(.system(size: 11, weight: .bold))
                                         .foregroundColor(.white)
                                 } else {
                                     // 未完成：优先级颜色边框
-                                    RoundedRectangle(cornerRadius: 5)
+                                    Circle()
                                         .stroke(colorForPriority(task.priorityRawValue), lineWidth: 2)
-                                        .frame(width: 20, height: 20)
-                                    
+                                        .frame(width: 18, height: 18)
+
                                     if task.priorityRawValue > 0 {
-                                        RoundedRectangle(cornerRadius: 5)
+                                        Circle()
                                             .fill(colorForPriority(task.priorityRawValue).opacity(0.1))
-                                            .frame(width: 20, height: 20)
+                                            .frame(width: 18, height: 18)
                                     }
                                 }
                             }
-                            
+
                             Text(task.title)
-                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
                                 .lineLimit(1)
                                 .foregroundColor(task.isDone ? DesignSystem.textTertiary : DesignSystem.textPrimary)
                                 .strikethrough(task.isDone)
                             Spacer()
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     
-                    if entry.totalCount - entry.completedCount > 6 {
-                        Spacer()
-                        Text("...还有 \(entry.totalCount - entry.completedCount - 6) 项任务")
-                            .font(.system(size: 14))
+                    if remainingTaskCount > 0 {
+                        Text("还有 \(remainingTaskCount) 项待处理")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
                             .foregroundColor(DesignSystem.textTertiary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    } else {
-                        Spacer()
+                            .padding(.top, 2)
                     }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -192,16 +193,16 @@ struct SmallWidgetView: View {
         }
     }
     
-    // 优先级颜色辅助函数
+    // 优先级颜色辅助函数 - 与App内保持一致
     private func colorForPriority(_ priority: Int) -> Color {
         switch priority {
-        case 3: return .red
-        case 2: return .orange
-        case 1: return .blue
-        default: return DesignSystem.textTertiary
+        case 3: return DesignSystem.error       // 高优先级 - 红色
+        case 2: return Color(hex: "c77a1b")    // 中优先级 - 橙黄色
+        case 1: return DesignSystem.secondary   // 低优先级 - 绿色
+        default: return DesignSystem.outline    // 无优先级 - 灰色
         }
     }
-    
+
     var body: some View {
         VStack(spacing: 8) {
             // 顶部日期
@@ -236,35 +237,41 @@ struct SmallWidgetView: View {
 // MARK: - 中号组件 (今日清单)
 struct MediumWidgetView: View {
     var entry: SimpleEntry
-    
-    // 优先级颜色辅助函数
+    private let visibleTaskLimit = 5
+
+    // 优先级颜色辅助函数 - 与App内保持一致
     private func colorForPriority(_ priority: Int) -> Color {
         switch priority {
-        case 3: return .red
-        case 2: return .orange
-        case 1: return .blue
-        default: return DesignSystem.textTertiary
+        case 3: return DesignSystem.error       // 高优先级 - 红色
+        case 2: return Color(hex: "c77a1b")    // 中优先级 - 橙黄色
+        case 1: return DesignSystem.secondary   // 低优先级 - 绿色
+        default: return DesignSystem.outline    // 无优先级 - 灰色
         }
     }
-    
+
+    private var remainingTaskCount: Int {
+        max(entry.totalCount - entry.completedCount - visibleTaskLimit, 0)
+    }
+
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .top, spacing: 0) {
             // 左侧概览
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(entry.date, format: .dateTime.day())
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .font(.system(size: 29, weight: .bold, design: .rounded))
                     .foregroundColor(DesignSystem.textPrimary)
-                
+                    .padding(.top, 1)
+
                 Text(entry.date, format: .dateTime.weekday())
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundColor(DesignSystem.textSecondary)
-                
+
                 Spacer()
-                
+
                 // 进度条
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("剩余 \(entry.totalCount - entry.completedCount) 项")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
                         .foregroundColor(DesignSystem.textSecondary)
                     
                     GeometryReader { geo in
@@ -272,7 +279,7 @@ struct MediumWidgetView: View {
                             Capsule()
                                 .fill(DesignSystem.textTertiary.opacity(0.2))
                                 .frame(height: 6)
-                            
+
                             if entry.totalCount > 0 {
                                 Capsule()
                                     .fill(DesignSystem.checkedColor)
@@ -282,93 +289,95 @@ struct MediumWidgetView: View {
                     }
                     .frame(height: 6)
                 }
-                .frame(width: 80)
+                .frame(width: 56)
+                .padding(.bottom, 6)
             }
-            .padding(.trailing, 16)
+            .padding(.trailing, 8)
+            .frame(maxHeight: .infinity, alignment: .top)
             
             // 右侧分割线
             Rectangle()
                 .fill(DesignSystem.separatorColor)
                 .frame(width: 1)
-                .padding(.vertical, 8)
+                .padding(.vertical, 4)
             
             // 右侧列表
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 if entry.topTasks.isEmpty {
                     if entry.totalCount > 0 && entry.completedCount == entry.totalCount {
                         // 全部完成
-                        VStack(alignment: .center, spacing: 8) {
-                            Spacer()
+                        VStack(alignment: .leading, spacing: 8) {
                             Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 24))
+                                .font(.system(size: 22))
                                 .foregroundColor(DesignSystem.checkedColor)
                             Text("今日任务全搞定！")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
                                 .foregroundColor(DesignSystem.textPrimary)
-                            Spacer()
                         }
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         // 还没有任务
-                        VStack(alignment: .center, spacing: 8) {
-                            Spacer()
+                        VStack(alignment: .leading, spacing: 8) {
                             Image(systemName: "plus.circle")
-                                .font(.system(size: 24))
+                                .font(.system(size: 22))
                                 .foregroundColor(DesignSystem.textTertiary)
                             Text("创建今日卡片")
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
                                 .foregroundColor(DesignSystem.textSecondary)
-                            Spacer()
                         }
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 } else {
-                    // 显示前 3 条任务
-                    ForEach(entry.topTasks.indices, id: \.self) { index in
+                    // 显示前 5 条任务
+                    ForEach(entry.topTasks.prefix(visibleTaskLimit).indices, id: \.self) { index in
                         let task = entry.topTasks[index]
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             ZStack {
                                 if task.isDone {
                                     // 已完成：实心绿色背景 + 白色勾
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(DesignSystem.checkedColor)
-                                        .frame(width: 16, height: 16)
+                                    Circle()
+                                        .fill(DesignSystem.primary)
+                                        .frame(width: 13, height: 13)
                                     Image(systemName: "checkmark")
-                                        .font(.system(size: 10, weight: .bold))
+                                        .font(.system(size: 8, weight: .bold))
                                         .foregroundColor(.white)
                                 } else {
                                     // 未完成：优先级颜色边框
-                                    RoundedRectangle(cornerRadius: 4)
+                                    Circle()
                                         .stroke(colorForPriority(task.priorityRawValue), lineWidth: 1.5)
-                                        .frame(width: 16, height: 16)
-                                    
+                                        .frame(width: 13, height: 13)
+
                                     if task.priorityRawValue > 0 {
-                                        RoundedRectangle(cornerRadius: 4)
+                                        Circle()
                                             .fill(colorForPriority(task.priorityRawValue).opacity(0.1))
-                                            .frame(width: 16, height: 16)
+                                            .frame(width: 13, height: 13)
                                     }
                                 }
                             }
-                            
+
                             Text(task.title)
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
                                 .lineLimit(1)
+                                .minimumScaleFactor(0.9)
                                 .foregroundColor(task.isDone ? DesignSystem.textTertiary : DesignSystem.textPrimary)
                                 .strikethrough(task.isDone)
                             Spacer()
                         }
                     }
                     
-                    if entry.totalCount - entry.completedCount > 3 {
-                        Text("...还有 \(entry.totalCount - entry.completedCount - 3) 项")
-                            .font(.system(size: 12))
+                    if remainingTaskCount > 0 {
+                        Text("还有 \(remainingTaskCount) 项")
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
                             .foregroundColor(DesignSystem.textTertiary)
                     }
-                    Spacer()
                 }
             }
-            .padding(.leading, 16)
+            .padding(.leading, 8)
+            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding()
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }

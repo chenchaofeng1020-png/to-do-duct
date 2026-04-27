@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -18,17 +19,18 @@ struct MemoHomeView: View {
     @State private var showDeleteAlert = false
     @State private var memoToDelete: MemoCardV3?
     @State private var showToast = false
+    @State private var isRefreshing: Bool = false // 下拉刷新状态
     
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            // 背景
-            DesignSystem.warmBackground
+            // 背景 - 使用与待办页面一致的背景色
+            DesignSystem.background
                 .ignoresSafeArea()
             
             if memos.isEmpty {
                 emptyState
             } else {
-                ScrollView {
+                ScrollView(showsIndicators: false) {
                     LazyVStack(spacing: 16) {
                         ForEach(memos) { memo in
                             MemoCardView(
@@ -39,24 +41,29 @@ struct MemoHomeView: View {
                             )
                         }
                     }
-                    .padding()
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
                     .padding(.bottom, 80) // 底部留出空间给 FAB
+                }
+                .refreshable {
+                    await refreshData()
                 }
             }
             
-            // 悬浮按钮 (FAB)
+            // 悬浮按钮 (FAB) - 使用与待办页面一致的样式
             Button {
                 showingInputSheet = true
                 Haptics.light()
             } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundColor(.white)
                     .frame(width: 56, height: 56)
-                    .background(DesignSystem.checkedColor)
+                    .background(DesignSystem.primary)
                     .clipShape(Circle())
-                    .shadow(color: DesignSystem.shadowColor, radius: 8, x: 0, y: 4)
+                    .shadow(color: DesignSystem.primary.opacity(0.3), radius: 8, x: 0, y: 4)
             }
+            .buttonStyle(ScaleButtonStyle())
             .padding(24)
             
             // Toast Overlay
@@ -141,13 +148,36 @@ struct MemoHomeView: View {
     }
     
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
+            Spacer().frame(height: 60)
+            
             Image(systemName: "square.and.pencil")
-                .font(.system(size: 48))
-                .foregroundColor(DesignSystem.textTertiary)
+                .font(.system(size: 64, weight: .light))
+                .foregroundColor(DesignSystem.outline)
+            
             Text("no_memos_yet")
-                .font(.system(size: 17, weight: .medium, design: .rounded))
-                .foregroundColor(DesignSystem.textSecondary)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundColor(DesignSystem.onSurfaceVariant)
+            
+            Button {
+                showingInputSheet = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("create_memo")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                }
+                .foregroundColor(DesignSystem.onPrimary)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(DesignSystem.primary)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(ScaleButtonStyle())
+            .padding(.top, 8)
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -159,6 +189,14 @@ struct MemoHomeView: View {
         Haptics.light()
         memoToDelete = nil
     }
+
+    private func refreshData() async {
+        isRefreshing = true
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        try? modelContext.save()
+        WidgetCenter.shared.reloadAllTimelines()
+        isRefreshing = false
+    }
 }
 
 struct MemoCardView: View {
@@ -169,8 +207,8 @@ struct MemoCardView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(formatDate(memo.createdAt))
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundColor(DesignSystem.textTertiary)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(DesignSystem.textSecondary)
                 
                 Spacer()
                 
@@ -187,15 +225,20 @@ struct MemoCardView: View {
             }
 
             Text(memo.content)
-                .font(.system(size: 16, weight: .regular, design: .rounded))
-                .foregroundColor(DesignSystem.textPrimary)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundColor(DesignSystem.onSurface)
                 .lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(16)
-        .background(DesignSystem.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: DesignSystem.shadowColor, radius: 4, x: 0, y: 2)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(DesignSystem.surfaceContainerLowest)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(DesignSystem.outlineVariant.opacity(0.2), lineWidth: 0.5)
+                )
+        )
         .onTapGesture {
             onTap()
         }
@@ -252,11 +295,11 @@ struct MemoActionSheet: View {
                     // Icon
                     ZStack {
                          Circle()
-                             .fill(DesignSystem.checkedColor.opacity(0.1))
+                             .fill(DesignSystem.primary.opacity(0.1))
                              .frame(width: 48, height: 48)
                          Image(systemName: "square.and.arrow.up")
                              .font(.system(size: 20, weight: .bold))
-                             .foregroundColor(DesignSystem.checkedColor)
+                             .foregroundColor(DesignSystem.primary)
                     }
                     .padding(.leading, 16)
                     
@@ -292,8 +335,8 @@ struct MemoActionSheet: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { onEdit() }
                  }) {
                     VStack(spacing: 8) {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 22))
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 22, weight: .bold))
                             .foregroundColor(DesignSystem.textPrimary)
                         Text("edit")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -334,8 +377,8 @@ struct MemoActionSheet: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { onDelete() }
                  }) {
                     VStack(spacing: 8) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 22))
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 21, weight: .semibold))
                             .foregroundColor(.red)
                         Text("delete")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -370,6 +413,7 @@ struct MemoInputSheet: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .topLeading) {
+                // Placeholder text
                 if content.isEmpty {
                     Text("memo_placeholder")
                         .font(.system(size: 17, weight: .regular, design: .rounded))
@@ -379,13 +423,20 @@ struct MemoInputSheet: View {
                         .allowsHitTesting(false)
                 }
                 
-                TextEditor(text: $content)
+                // TextField
+                TextField("", text: $content, axis: .vertical)
                     .font(.system(size: 17, weight: .regular, design: .rounded))
                     .focused($isFocused)
-                    .scrollContentBackground(.hidden) // 移除默认背景
+                    .textFieldStyle(.plain)
+                    .scrollContentBackground(.hidden)
                     .background(Color.clear)
-                    .padding()
-                    .frame(maxHeight: .infinity)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 24)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .lineSpacing(4)
+                    .lineLimit(nil)
+                    .multilineTextAlignment(.leading)
+                    .onSubmit { }
             }
             .background(DesignSystem.cardBackground)
             .navigationTitle(memoToEdit == nil ? "record_memo" : "edit")
@@ -415,7 +466,7 @@ struct MemoInputSheet: View {
                 }
                 
                 // 延迟聚焦，保证 Sheet 动画流畅
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     isFocused = true
                 }
             }

@@ -31,8 +31,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "BA67DDEE2F100A0C00791A52"
-               BuildableName = "To-Do Duck.app"
-               BlueprintName = "To-Do Duck"
+               BuildableName = "To-Do Duct.app"
+               BlueprintName = "To-Do Duct"
                ReferencedContainer = "container:To-Do Duck.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -73,8 +73,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "BA67DDEE2F100A0C00791A52"
-            BuildableName = "To-Do Duck.app"
-            BlueprintName = "To-Do Duck"
+            BuildableName = "To-Do Duct.app"
+            BlueprintName = "To-Do Duct"
             ReferencedContainer = "container:To-Do Duck.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -109,8 +109,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "BA67DDEE2F100A0C00791A52"
-            BuildableName = "To-Do Duck.app"
-            BlueprintName = "To-Do Duck"
+            BuildableName = "To-Do Duct.app"
+            BlueprintName = "To-Do Duct"
             ReferencedContainer = "container:To-Do Duck.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

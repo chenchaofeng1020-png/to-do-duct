@@ -15,23 +15,25 @@ struct ProfileView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                DesignSystem.creamBackground
+                // 背景 - 使用与待办页面一致的背景色
+                DesignSystem.background
                     .ignoresSafeArea()
                 
                 List {
-                    Section(header: Text("data_sync")) {
+                    Section(header: sectionHeader("data_sync")) {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Image(systemName: "icloud.fill")
-                                    .foregroundColor(isCloudSyncEnabled ? .blue : .gray)
-                                    .font(.system(size: 22))
+                                    .foregroundColor(isCloudSyncEnabled ? DesignSystem.primary : DesignSystem.outline)
+                                    .font(.system(size: 20))
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("icloud_sync")
-                                        .font(.headline)
+                                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                                        .foregroundColor(DesignSystem.onSurface)
                                     Text("icloud_sync_desc")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .font(.system(size: 13, weight: .regular, design: .rounded))
+                                        .foregroundColor(DesignSystem.textSecondary)
                                 }
                                 
                                 Spacer()
@@ -42,6 +44,7 @@ struct ProfileView: View {
                                 } else {
                                     Toggle("", isOn: $isCloudSyncEnabled)
                                         .labelsHidden()
+                                        .tint(DesignSystem.primary)
                                         .onChange(of: isCloudSyncEnabled) {
                                             let newValue = isCloudSyncEnabled
                                             if newValue {
@@ -52,30 +55,31 @@ struct ProfileView: View {
                                         }
                                 }
                             }
-                            
-                            // 显示当前实际状态提示
-                            // 移除静态的"重启生效"提示，避免误导用户
-                            // 状态切换时已通过 Alert 提示重启
-
                         }
                         .padding(.vertical, 4)
                     }
-                    .listRowBackground(DesignSystem.cardBackground)
+                    .listRowBackground(DesignSystem.surfaceContainerLowest)
                     
-                    Section(header: Text("preferences")) {
+                    Section(header: sectionHeader("preferences")) {
                         Toggle("allow_past_continuation", isOn: $allowPastContinuation)
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundColor(DesignSystem.onSurface)
+                            .tint(DesignSystem.primary)
                     }
-                    .listRowBackground(DesignSystem.cardBackground)
+                    .listRowBackground(DesignSystem.surfaceContainerLowest)
                     
-                    Section(header: Text("about")) {
+                    Section(header: sectionHeader("about")) {
                         HStack {
                             Text("version")
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                .foregroundColor(DesignSystem.onSurface)
                             Spacer()
                             Text("\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"))")
-                                .foregroundColor(.secondary)
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                .foregroundColor(DesignSystem.textSecondary)
                         }
                     }
-                    .listRowBackground(DesignSystem.cardBackground)
+                    .listRowBackground(DesignSystem.surfaceContainerLowest)
                 }
                 .navigationTitle("profile_title")
                 .scrollContentBackground(.hidden)
@@ -95,37 +99,47 @@ struct ProfileView: View {
             }
         }
     }
+
+    private func sectionHeader(_ titleKey: LocalizedStringKey) -> some View {
+        Text(titleKey)
+            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .foregroundStyle(DesignSystem.textSecondary)
+            .textCase(nil)
+    }
     
     private func checkiCloudStatus() {
         isChecking = true
         
-        CKContainer.default().accountStatus { status, error in
-            DispatchQueue.main.async {
-                isChecking = false
-                
-                if let error = error {
+        Task {
+            do {
+                let status = try await CKContainer.default().accountStatus()
+                await MainActor.run {
+                    isChecking = false
+                    
+                    switch status {
+                    case .available:
+                        showRestartAlert = true
+                    case .noAccount:
+                        icloudErrorMessage = NSLocalizedString("icloud_not_logged_in", comment: "")
+                        showiCloudErrorAlert = true
+                    case .restricted:
+                        icloudErrorMessage = "iCloud access is restricted on this device."
+                        showiCloudErrorAlert = true
+                    case .couldNotDetermine:
+                        icloudErrorMessage = NSLocalizedString("network_error", comment: "")
+                        showiCloudErrorAlert = true
+                    case .temporarilyUnavailable:
+                        icloudErrorMessage = "iCloud is temporarily unavailable."
+                        showiCloudErrorAlert = true
+                    @unknown default:
+                        showRestartAlert = true
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isChecking = false
                     icloudErrorMessage = NSLocalizedString("network_error", comment: "") + "\n(\(error.localizedDescription))"
                     showiCloudErrorAlert = true
-                    return
-                }
-                
-                switch status {
-                case .available:
-                    showRestartAlert = true
-                case .noAccount:
-                    icloudErrorMessage = NSLocalizedString("icloud_not_logged_in", comment: "")
-                    showiCloudErrorAlert = true
-                case .restricted:
-                    icloudErrorMessage = "iCloud access is restricted on this device."
-                    showiCloudErrorAlert = true
-                case .couldNotDetermine:
-                    icloudErrorMessage = NSLocalizedString("network_error", comment: "")
-                    showiCloudErrorAlert = true
-                case .temporarilyUnavailable:
-                    icloudErrorMessage = "iCloud is temporarily unavailable."
-                    showiCloudErrorAlert = true
-                @unknown default:
-                    showRestartAlert = true
                 }
             }
         }

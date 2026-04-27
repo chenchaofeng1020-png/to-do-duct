@@ -9,7 +9,7 @@ struct DuckWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             WidgetEntryView(entry: entry)
-                .containerBackground(DesignSystem.warmBackground, for: .widget)
+                .containerBackground(DesignSystem.background, for: .widget)
         }
         .configurationDisplayName("To-Do Duck")
         .description("查看今天的待办事项和鸭鸭心情。")
