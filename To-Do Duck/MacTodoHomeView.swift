@@ -13,6 +13,7 @@ struct MacTodoHomeView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\DailyCardV3.date, order: .reverse), SortDescriptor(\DailyCardV3.createdAt, order: .reverse)]) private var cards: [DailyCardV3]
+    @Query private var inboxItems: [TodoItemV3]
     @State private var addingTextByCard: [UUID: String] = [:]
     @State private var inboxInputText: String = ""
     @State private var targetDate: Date = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
@@ -22,6 +23,13 @@ struct MacTodoHomeView: View {
     @State private var confettiCounter: Int = 0
     @State private var confettiSourcePosition: CGPoint = .zero
     @State private var waveRotation: Double = 0
+
+    init() {
+        _inboxItems = Query(
+            filter: #Predicate<TodoItemV3> { $0.card == nil },
+            sort: [SortDescriptor(\TodoItemV3.orderIndex), SortDescriptor(\TodoItemV3.createdAt)]
+        )
+    }
     
     // Sheets management
     @State private var editingItem: TodoItemV3?
@@ -39,14 +47,6 @@ struct MacTodoHomeView: View {
         default:
             return NSLocalizedString("greeting_evening", comment: "Evening greeting")
         }
-    }
-
-    private var inboxItems: [TodoItemV3] {
-        let descriptor = FetchDescriptor<TodoItemV3>(
-            sortBy: [SortDescriptor(\TodoItemV3.orderIndex), SortDescriptor(\TodoItemV3.createdAt)]
-        )
-        let allItems = (try? modelContext.fetch(descriptor)) ?? []
-        return allItems.filter { $0.card == nil }
     }
 
     private var inboxBadgeText: String {
@@ -1007,6 +1007,15 @@ struct MacTodoItemView: View {
     }
 }
 
+private enum MacDailyCardTitleFormatter {
+    static let shared: DateFormatter = {
+        let formatter = DateFormatter()
+        let format = NSLocalizedString("card_date_format", comment: "Date format")
+        formatter.dateFormat = format != "card_date_format" ? format : "MMM d, EEEE"
+        return formatter
+    }()
+}
+
 extension DailyCardV3 {
     var displayTitle: String {
         if let custom = customTitle, !custom.isEmpty {
@@ -1029,11 +1038,7 @@ extension DailyCardV3 {
             return "后天"
         }
 
-        let formatter = DateFormatter()
-        let format = NSLocalizedString("card_date_format", comment: "Date format")
-        // Check if localization key exists/returned self, fallback if needed
-        formatter.dateFormat = format != "card_date_format" ? format : "MMM d, EEEE"
-        return formatter.string(from: date)
+        return MacDailyCardTitleFormatter.shared.string(from: date)
     }
 }
 #endif
