@@ -8,17 +8,65 @@
 import SwiftUI
 import SwiftData
 import CloudKit
+#if os(macOS)
+import AppKit
+#endif
+
+#if os(macOS)
+private let mainWindowSceneID = "main-window"
+
+final class MacAppDelegate: NSObject, NSApplicationDelegate {
+    var reopenMainWindow: (() -> Void)?
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            reopenMainWindow?()
+        }
+        return true
+    }
+}
+#endif
 
 @main
 struct To_Do_DuckApp: App {
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var appDelegate
+    @AppStorage(MacQuickCaptureShortcut.keyCodeDefaultsKey) private var shortcutKeyCode: Int = Int(MacQuickCaptureShortcut.default.keyCode)
+    @AppStorage(MacQuickCaptureShortcut.modifiersDefaultsKey) private var shortcutModifiers: Int = Int(MacQuickCaptureShortcut.default.carbonModifiers)
+    @StateObject private var quickCaptureCoordinator = MacQuickCaptureCoordinator(
+        modelContainer: To_Do_DuckApp.sharedModelContainer
+    )
+    #endif
 
     var body: some Scene {
         #if os(macOS)
-        WindowGroup {
+        Window("To-Do Duck", id: mainWindowSceneID) {
             MainView()
+                .tint(DesignSystem.macAccent)
+                .accentColor(DesignSystem.macAccent)
+                .onAppear {
+                    quickCaptureCoordinator.start()
+                    appDelegate.reopenMainWindow = {
+                        NSApp.activate(ignoringOtherApps: true)
+                        NSApp.windows.first { $0.identifier?.rawValue == mainWindowSceneID }?.makeKeyAndOrderFront(nil)
+                    }
+                }
         }
+        .defaultSize(width: 1280, height: 860)
         .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .commandsRemoved()
         .modelContainer(To_Do_DuckApp.sharedModelContainer)
+
+        MenuBarExtra("To-Do Duck", systemImage: "tray.full") {
+            Button("快速收集") {
+                NotificationCenter.default.post(name: .showMacQuickCapture, object: nil)
+            }
+
+            Text("快捷键 \(MacQuickCaptureShortcut(keyCode: UInt32(shortcutKeyCode), carbonModifiers: UInt32(shortcutModifiers)).displayString)")
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(.secondary)
+        }
         #else
         WindowGroup {
             MainView()

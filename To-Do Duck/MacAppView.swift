@@ -3,6 +3,7 @@ import SwiftUI
 #if os(macOS)
 struct MacAppView: View {
     @State private var selectedTab: MacTab? = .todo
+    @State private var hoveredTab: MacTab?
     
     enum MacTab: String, CaseIterable, Identifiable {
         case todo
@@ -30,14 +31,36 @@ struct MacAppView: View {
     
     var body: some View {
         NavigationSplitView {
-            List(selection: $selectedTab) {
+            VStack(alignment: .leading, spacing: 6) {
                 ForEach(MacTab.allCases) { tab in
-                    NavigationLink(value: tab) {
-                        Label(LocalizedStringKey(tab.title), systemImage: tab.icon)
-                            .foregroundStyle(DesignSystem.textPrimary)
+                    Button {
+                        selectedTab = tab
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 18, weight: .medium))
+                                .frame(width: 22)
+
+                            Text(LocalizedStringKey(tab.title))
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+
+                            Spacer(minLength: 0)
+                        }
+                        .foregroundStyle(foregroundColor(for: tab))
+                        .padding(.horizontal, 18)
+                        .frame(height: 40)
+                        .background(backgroundColor(for: tab))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .onHover { isHovering in
+                        hoveredTab = isHovering ? tab : (hoveredTab == tab ? nil : hoveredTab)
                     }
                 }
             }
+            .padding(.horizontal, 12)
+            .padding(.top, 16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .navigationSplitViewColumnWidth(min: 200, ideal: 250, max: 300)
             // .toolbar(removing: .title) // Removed for compatibility with macOS < 15.0
         } detail: {
@@ -55,6 +78,24 @@ struct MacAppView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .tint(DesignSystem.macAccent)
+        .accentColor(DesignSystem.macAccent)
+    }
+
+    private func foregroundColor(for tab: MacTab) -> Color {
+        selectedTab == tab ? DesignSystem.sidebarSelectionForeground : DesignSystem.textPrimary
+    }
+
+    private func backgroundColor(for tab: MacTab) -> Color {
+        if selectedTab == tab {
+            return DesignSystem.sidebarSelectionBackground
+        }
+
+        if hoveredTab == tab {
+            return DesignSystem.surfaceContainerLow
+        }
+
+        return .clear
     }
 }
 

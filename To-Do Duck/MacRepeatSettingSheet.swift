@@ -20,7 +20,39 @@ struct RepeatSettingSheet: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            header
+            ScrollView {
+                ruleFormView
+            }
+            .scrollIndicators(.automatic)
+            .thinScrollbar()
+
+            Divider()
+
+            footerActions
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 20)
+                .background(DesignSystem.background)
+        }
+        .frame(width: 400, height: sheetHeight)
+        .background(DesignSystem.background)
+        .tint(DesignSystem.macAccent)
+        .onAppear {
+            checkInitialState()
+        }
+    }
+
+    private var sheetHeight: CGFloat {
+        var height: CGFloat = selectedOption == .custom ? 610 : 450
+        if existingRule != nil {
+            height += 50
+        }
+        return height
+    }
+
+    private var header: some View {
+        VStack(spacing: 0) {
             HStack {
                 Text(LocalizedStringKey(existingRule != nil ? "repeat_task_active" : "repeat_task_title"))
                     .font(.headline)
@@ -39,22 +71,7 @@ struct RepeatSettingSheet: View {
             .background(DesignSystem.background)
 
             Divider()
-
-            ruleFormView
         }
-        .frame(width: 400, height: heightForContent)
-        .background(DesignSystem.background)
-        .onAppear {
-            checkInitialState()
-        }
-    }
-    
-    private var heightForContent: CGFloat {
-        var height: CGFloat = (selectedOption == .custom) ? 800 : 450
-        if existingRule != nil {
-            height += 50 // Space for stop button
-        }
-        return height
     }
     
     // MARK: - Subviews
@@ -65,7 +82,7 @@ struct RepeatSettingSheet: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "info.circle")
                     .font(.system(size: 16))
-                    .foregroundColor(DesignSystem.textSecondary)
+                    .foregroundColor(DesignSystem.macAccent)
                     .padding(.top, 2)
                 Text(LocalizedStringKey("repeat_description"))
                     .font(.system(size: 14))
@@ -73,7 +90,7 @@ struct RepeatSettingSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(12)
-            .background(DesignSystem.textTertiary.opacity(0.1))
+            .background(DesignSystem.macAccent.opacity(0.08))
             .cornerRadius(8)
             
             // 快捷选项 Grid
@@ -87,13 +104,12 @@ struct RepeatSettingSheet: View {
             
             // 自定义日历
             if selectedOption == .custom {
-                CustomCalendarView(selectedDate: $endDate)
-                    .padding(16)
-                    .background(DesignSystem.cardBackground)
-                    .cornerRadius(12)
-                    .frame(minHeight: 450) // Use minHeight to allow growth
-                    .clipped()
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                CustomCalendarView(selectedDate: $endDate, isCompact: true)
+                    .padding(14)
+                .background(DesignSystem.cardBackground)
+                .cornerRadius(12)
+                .clipped()
+                .transition(.opacity.combined(with: .move(edge: .top)))
             } else {
                  // 显示选中的日期提示
                  HStack {
@@ -105,12 +121,16 @@ struct RepeatSettingSheet: View {
                          .foregroundColor(DesignSystem.textPrimary)
                  }
                  .padding()
-                 .background(DesignSystem.textTertiary.opacity(0.1))
+                 .background(DesignSystem.macAccent.opacity(0.08))
                  .cornerRadius(12)
             }
             
-            Spacer(minLength: 0)
-            
+        }
+        .padding(24)
+    }
+
+    private var footerActions: some View {
+        VStack(spacing: 12) {
             Button {
                 if let rule = existingRule {
                     updateRule(rule)
@@ -124,9 +144,9 @@ struct RepeatSettingSheet: View {
                     .padding(.vertical, 6)
             }
             .buttonStyle(.borderedProminent)
-            .tint(DesignSystem.checkedColor)
+            .tint(DesignSystem.macAccent)
             .controlSize(.large)
-            
+
             if let rule = existingRule {
                 Button(role: .destructive) {
                     deleteRule(rule)
@@ -139,7 +159,6 @@ struct RepeatSettingSheet: View {
                 .controlSize(.large)
             }
         }
-        .padding(24)
     }
     
     private func quickOptionButton(_ titleKey: String, type: QuickOptionType) -> some View {
@@ -153,11 +172,11 @@ struct RepeatSettingSheet: View {
                 .foregroundColor(isSelected ? .white : DesignSystem.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(isSelected ? DesignSystem.checkedColor : DesignSystem.cardBackground)
+                .background(isSelected ? DesignSystem.macAccent : DesignSystem.cardBackground)
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(isSelected ? Color.clear : DesignSystem.separatorColor, lineWidth: 1)
+                        .stroke(isSelected ? DesignSystem.macAccent : DesignSystem.separatorColor, lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)

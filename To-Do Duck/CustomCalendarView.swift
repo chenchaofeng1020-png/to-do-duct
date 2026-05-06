@@ -4,6 +4,7 @@ import SwiftUI
 
 struct CustomCalendarView: View {
     @Binding var selectedDate: Date
+    var isCompact: Bool = false
     @State private var currentMonth: Date = Date()
     
     private let calendar = Calendar.current
@@ -16,9 +17,21 @@ struct CustomCalendarView: View {
         NSLocalizedString("fri", value: "FRI", comment: "Friday abbreviation"),
         NSLocalizedString("sat", value: "SAT", comment: "Saturday abbreviation")
     ]
+
+    private var verticalSpacing: CGFloat {
+        isCompact ? 10 : 16
+    }
+
+    private var dayGridSpacing: CGFloat {
+        isCompact ? 8 : 16
+    }
+
+    private var dayCellHeight: CGFloat {
+        isCompact ? 34 : 44
+    }
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: verticalSpacing) {
             // Header: Month/Year navigation
             HStack {
                 Text(monthYearString(for: currentMonth))
@@ -46,7 +59,7 @@ struct CustomCalendarView: View {
             .padding(.horizontal, 4)
             
             // Days grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 16) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: dayGridSpacing) {
                 // Weekday headers
                 ForEach(daysOfWeek, id: \.self) { day in
                     Text(day)
@@ -58,11 +71,17 @@ struct CustomCalendarView: View {
                 // Days
                 ForEach(daysInMonth(), id: \.self) { date in
                     if let date = date {
-                        DayCell(date: date, selectedDate: selectedDate, isToday: calendar.isDateInToday(date)) {
+                        DayCell(
+                            date: date,
+                            selectedDate: selectedDate,
+                            isToday: calendar.isDateInToday(date),
+                            height: dayCellHeight
+                        ) {
                             selectedDate = date
                         }
                     } else {
-                        Text("") // Empty placeholder for offset
+                        Color.clear
+                            .frame(height: dayCellHeight)
                     }
                 }
             }
@@ -122,6 +141,7 @@ struct DayCell: View {
     let date: Date
     let selectedDate: Date
     let isToday: Bool
+    var height: CGFloat = 44
     let action: () -> Void
     
     private var isSelected: Bool {
@@ -135,7 +155,7 @@ struct DayCell: View {
                 .foregroundColor(isSelected ? .white : (isToday ? DesignSystem.primary : DesignSystem.textPrimary))
                 .padding(.vertical, 4)
                 .frame(maxWidth: .infinity)
-                .aspectRatio(0.6, contentMode: .fill)
+                .frame(height: height)
                 .background(
                     ZStack {
                         if isSelected {

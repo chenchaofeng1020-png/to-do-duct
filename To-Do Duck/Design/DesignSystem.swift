@@ -6,6 +6,7 @@ import AppKit
 #endif
 
 enum DesignSystem {
+    static let macAccent = Color(hex: "0c6d45")
     static let neonLime = Color(red: 0.94, green: 1.0, blue: 0.35) // 近似 #F3FF57
     static let purple = Color(red: 0.49, green: 0.42, blue: 0.95)   // 近似 #7C6BF2
     
@@ -132,6 +133,8 @@ enum DesignSystem {
     
     static let textTertiary = Color(nsColor: .tertiaryLabelColor)
     static let cardBackground = Color(nsColor: .controlBackgroundColor)
+    static var sidebarSelectionBackground: Color { makeDynamicColor(light: "e8f5ee", dark: "173326") }
+    static var sidebarSelectionForeground: Color { makeDynamicColor(light: "0c6d45", dark: "b6efcd") }
     
     static var cardHeaderBackground: Color {
         Color(nsColor: NSColor(name: nil, dynamicProvider: { appearance in
@@ -188,6 +191,8 @@ enum DesignSystem {
     
     static let textTertiary = Color(UIColor.tertiaryLabel)
     static let cardBackground = Color(UIColor.secondarySystemGroupedBackground)
+    static var sidebarSelectionBackground: Color { makeDynamicColor(light: "e8f5ee", dark: "173326") }
+    static var sidebarSelectionForeground: Color { makeDynamicColor(light: "0c6d45", dark: "b6efcd") }
     
     static var cardHeaderBackground: Color {
         Color(UIColor { traitCollection in

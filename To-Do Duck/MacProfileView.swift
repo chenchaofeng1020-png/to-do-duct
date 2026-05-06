@@ -4,6 +4,9 @@ import CloudKit
 #if os(macOS)
 struct MacProfileView: View {
     @AppStorage("allowPastContinuation") private var allowPastContinuation: Bool = false
+    @AppStorage("macQuickCaptureContinuousMode") private var quickCaptureContinuousMode: Bool = false
+    @AppStorage(MacQuickCaptureShortcut.keyCodeDefaultsKey) private var quickCaptureShortcutKeyCode: Int = Int(MacQuickCaptureShortcut.default.keyCode)
+    @AppStorage(MacQuickCaptureShortcut.modifiersDefaultsKey) private var quickCaptureShortcutModifiers: Int = Int(MacQuickCaptureShortcut.default.carbonModifiers)
     
     @StateObject private var logger = AppLogger.shared
     
@@ -24,6 +27,7 @@ struct MacProfileView: View {
     @State private var appGroupTestResult: String?
     @State private var cloudWriteResult: String?
     @State private var bootstrapResult: String?
+    @State private var quickCaptureShortcut = MacQuickCaptureShortcut.load()
     
     var body: some View {
         ScrollView {
@@ -57,7 +61,7 @@ struct MacProfileView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Image(systemName: "icloud.fill")
-                                .foregroundColor(isCloudSyncEnabled ? .blue : .gray)
+                                .foregroundColor(isCloudSyncEnabled ? DesignSystem.macAccent : .gray)
                                 .font(.system(size: 22))
                             
                             VStack(alignment: .leading, spacing: 4) {
@@ -269,13 +273,45 @@ struct MacProfileView: View {
                         .foregroundStyle(.secondary)
                         .padding(.leading, 4)
                     
-                    VStack(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 14) {
                         HStack {
                             Text("allow_past_continuation")
                             Spacer()
                             Toggle("", isOn: $allowPastContinuation)
                                 .labelsHidden()
                                 .toggleStyle(.switch)
+                        }
+
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("快速收集")
+                                        .font(.headline)
+                                    Text("全局快捷键 \(quickCaptureShortcut.displayString)，可在收集箱和备忘之间快速切换。")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                MacShortcutRecorder(shortcut: $quickCaptureShortcut) { newShortcut in
+                                    quickCaptureShortcut = newShortcut
+                                    quickCaptureShortcutKeyCode = Int(newShortcut.keyCode)
+                                    quickCaptureShortcutModifiers = Int(newShortcut.carbonModifiers)
+                                    newShortcut.save()
+                                    NotificationCenter.default.post(name: .macQuickCaptureShortcutDidChange, object: newShortcut)
+                                }
+                            }
+
+                            HStack {
+                                Text("默认连续录入")
+                                Spacer()
+                                Toggle("", isOn: $quickCaptureContinuousMode)
+                                    .labelsHidden()
+                                    .toggleStyle(.switch)
+                            }
                         }
                     }
                     .padding()
@@ -378,6 +414,7 @@ struct MacProfileView: View {
             Text("reset_local_data_confirmation_message")
         }
         .onAppear {
+            quickCaptureShortcut = MacQuickCaptureShortcut.load()
             // Load sync state from Standard Defaults only to avoid App Group crashes
             // let groupDefaults = UserDefaults(suiteName: "group.sdy.tododuck")
             // let groupSync = groupDefaults?.bool(forKey: "isCloudSyncEnabled") ?? false

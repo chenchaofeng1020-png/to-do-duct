@@ -10,12 +10,14 @@ struct MacTodoHomeView: View {
     private let collectionBoxWidth: CGFloat = 320
     private let collectionBoxCollapsedOffset: CGFloat = 18
     private let collectionBoxAnimation: Animation = .spring(response: 0.44, dampingFraction: 0.88, blendDuration: 0.18)
+    private let searchExpandedWidth: CGFloat = 332
 
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\DailyCardV3.date, order: .reverse), SortDescriptor(\DailyCardV3.createdAt, order: .reverse)]) private var cards: [DailyCardV3]
     @Query private var inboxItems: [TodoItemV3]
     @State private var addingTextByCard: [UUID: String] = [:]
     @State private var inboxInputText: String = ""
+    @State private var searchText: String = ""
     @State private var targetDate: Date = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
     @State private var showPastDateAlert: Bool = false
     @AppStorage("allowPastContinuation") private var allowPastContinuation: Bool = false
@@ -23,6 +25,9 @@ struct MacTodoHomeView: View {
     @State private var confettiCounter: Int = 0
     @State private var confettiSourcePosition: CGPoint = .zero
     @State private var waveRotation: Double = 0
+    @State private var isSearchExpanded: Bool = false
+    @FocusState private var isSearchFieldFocused: Bool
+    private let saveService = QuickCaptureSaveService(modelContainer: To_Do_DuckApp.sharedModelContainer)
 
     init() {
         _inboxItems = Query(
@@ -51,6 +56,52 @@ struct MacTodoHomeView: View {
 
     private var inboxBadgeText: String {
         inboxItems.count > 99 ? "99+" : "\(inboxItems.count)"
+    }
+
+    private var trimmedSearchText: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isSearching: Bool {
+        !trimmedSearchText.isEmpty
+    }
+
+    private var filteredCardSections: [MacTodoCardSearchSection] {
+        cards.compactMap { card in
+            let allItems = (card.items ?? []).sorted { $0.orderIndex < $1.orderIndex }
+            guard isSearching else {
+                return MacTodoCardSearchSection(card: card, visibleItems: allItems, isCardTitleMatch: false)
+            }
+
+            let isCardTitleMatch = TodoSearchMatcher.matchesAny(
+                card.searchableTexts,
+                query: trimmedSearchText
+            )
+            if isCardTitleMatch {
+                return MacTodoCardSearchSection(card: card, visibleItems: allItems, isCardTitleMatch: true)
+            }
+
+            let matchedItems = allItems.filter {
+                TodoSearchMatcher.matches($0.title, query: trimmedSearchText)
+            }
+            guard !matchedItems.isEmpty else { return nil }
+            return MacTodoCardSearchSection(card: card, visibleItems: matchedItems, isCardTitleMatch: false)
+        }
+    }
+
+    private var filteredInboxItems: [TodoItemV3] {
+        guard isSearching else { return inboxItems }
+        return inboxItems.filter {
+            TodoSearchMatcher.matches($0.title, query: trimmedSearchText)
+        }
+    }
+
+    private var hasAnySearchResults: Bool {
+        !filteredCardSections.isEmpty || !filteredInboxItems.isEmpty
+    }
+
+    private var shouldShowExpandedSearch: Bool {
+        isSearchExpanded || isSearching
     }
     
     var body: some View {
@@ -97,61 +148,138 @@ struct MacTodoHomeView: View {
                         
                         Spacer()
                         
-                        HStack(spacing: 10) {
-                            Button(action: {
-                                withAnimation { createTodayCard() }
-                            }) {
-                                Label("new_day", systemImage: "plus.circle.fill")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 18)
-                                    .frame(height: headerActionHeight)
-                                    .background(DesignSystem.primary)
-                                    .clipShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
-                            
-                            Button {
-                                withAnimation(collectionBoxAnimation) {
-                                    isCollectionBoxExpanded.toggle()
+                        ZStack(alignment: .trailing) {
+                            HStack(spacing: 10) {
+                                Button(action: {
+                                    withAnimation { createTodayCard() }
+                                }) {
+                                    Label("new_day", systemImage: "plus.circle.fill")
+                                        .font(.headline)
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 18)
+                                        .frame(height: headerActionHeight)
+                                        .background(DesignSystem.primary)
+                                        .clipShape(Capsule())
                                 }
-                            } label: {
-                                ZStack(alignment: .topTrailing) {
-                                    Image(systemName: isCollectionBoxExpanded ? "sidebar.right" : "tray.full")
-                                        .font(.system(size: 15, weight: .semibold))
+                                .buttonStyle(.plain)
+
+                                Button {
+                                    withAnimation(collectionBoxAnimation) {
+                                        expandSearch()
+                                    }
+                                } label: {
+                                    Image(systemName: "magnifyingglass")
+                                        .font(.system(size: 14, weight: .semibold))
                                         .frame(width: 20, height: 20)
                                         .foregroundStyle(DesignSystem.textPrimary)
                                         .padding(.horizontal, 16)
                                         .frame(height: headerActionHeight)
-                                        .background(
-                                            DesignSystem.surfaceContainerHigh
-                                                .opacity(isCollectionBoxExpanded ? 1 : 0.82)
-                                        )
+                                        .background(DesignSystem.surfaceContainerHigh)
                                         .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                                .help("search_todo_or_date_placeholder")
 
-                                    if !inboxItems.isEmpty {
-                                        Text(inboxBadgeText)
-                                            .font(.system(size: 10, weight: .bold, design: .rounded))
-                                            .foregroundStyle(.white)
-                                            .padding(.horizontal, 6)
-                                            .frame(height: 18)
-                                            .background(DesignSystem.primary)
-                                            .clipShape(Capsule())
-                                            .overlay(
-                                                Capsule()
-                                                    .stroke(DesignSystem.background, lineWidth: 1)
+                                Button {
+                                    withAnimation(collectionBoxAnimation) {
+                                        isCollectionBoxExpanded.toggle()
+                                    }
+                                } label: {
+                                    ZStack(alignment: .topTrailing) {
+                                        Image(systemName: isCollectionBoxExpanded ? "sidebar.right" : "tray.full")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .frame(width: 20, height: 20)
+                                            .foregroundStyle(DesignSystem.textPrimary)
+                                            .padding(.horizontal, 16)
+                                            .frame(height: headerActionHeight)
+                                            .background(
+                                                DesignSystem.surfaceContainerHigh
+                                                    .opacity(isCollectionBoxExpanded ? 1 : 0.82)
                                             )
-                                            .offset(x: 8, y: -4)
+                                            .clipShape(Capsule())
+
+                                        if !inboxItems.isEmpty {
+                                            Text(inboxBadgeText)
+                                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 6)
+                                                .frame(height: 18)
+                                                .background(DesignSystem.primary)
+                                                .clipShape(Capsule())
+                                                .overlay(
+                                                    Capsule()
+                                                        .stroke(DesignSystem.background, lineWidth: 1)
+                                                )
+                                                .offset(x: 8, y: -4)
+                                        }
                                     }
                                 }
+                                .buttonStyle(.plain)
+                                .help(isCollectionBoxExpanded ? "收起收集箱" : "展开收集箱")
                             }
-                            .buttonStyle(.plain)
-                            .help(isCollectionBoxExpanded ? "收起收集箱" : "展开收集箱")
+                            .opacity(shouldShowExpandedSearch ? 0 : 1)
+                            .allowsHitTesting(!shouldShowExpandedSearch)
+
+                            HStack(spacing: 8) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(DesignSystem.textTertiary)
+
+                                TextField("search_todo_or_date_placeholder", text: $searchText)
+                                    .textFieldStyle(.plain)
+                                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                                    .foregroundStyle(DesignSystem.textPrimary)
+                                    .focused($isSearchFieldFocused)
+
+                                if !searchText.isEmpty {
+                                    Button {
+                                        searchText = ""
+                                        isSearchFieldFocused = true
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(DesignSystem.textTertiary)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+
+                                Button {
+                                    withAnimation(collectionBoxAnimation) {
+                                        collapseSearch()
+                                    }
+                                } label: {
+                                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(DesignSystem.textTertiary)
+                                        .frame(width: 22, height: 22)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.horizontal, 12)
+                            .frame(width: searchExpandedWidth, height: headerActionHeight)
+                            .background(DesignSystem.surfaceContainerHigh)
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule()
+                                    .stroke(isSearchFieldFocused ? DesignSystem.macAccent.opacity(0.55) : DesignSystem.cardBorder, lineWidth: isSearchFieldFocused ? 1.2 : 0.8)
+                            )
+                            .opacity(shouldShowExpandedSearch ? 1 : 0)
+                            .allowsHitTesting(shouldShowExpandedSearch)
+                            .scaleEffect(shouldShowExpandedSearch ? 1 : 0.96, anchor: .trailing)
                         }
+                        .frame(width: searchExpandedWidth, alignment: .trailing)
                     }
                     .padding(.top, 20)
                     
-                    if cards.isEmpty {
+                    if isSearching && !hasAnySearchResults {
+                        ContentUnavailableView {
+                            Label(String(localized: "search_no_results_title"), systemImage: "magnifyingglass")
+                        } description: {
+                            Text("search_no_results_message")
+                        }
+                        .padding(.top, 50)
+                    } else if cards.isEmpty {
                         ContentUnavailableView {
                             Label("todo_list_empty", systemImage: "moon.zzz.fill")
                         } description: {
@@ -162,20 +290,30 @@ struct MacTodoHomeView: View {
                             }
                         }
                         .padding(.top, 50)
+                    } else if isSearching && filteredCardSections.isEmpty {
+                        ContentUnavailableView {
+                            Label(String(localized: "search_cards_empty_title"), systemImage: "calendar")
+                        } description: {
+                            Text(String(format: NSLocalizedString("search_inbox_remaining_format", comment: "Remaining inbox matches"), filteredInboxItems.count))
+                        }
+                        .padding(.top, 50)
                     } else {
                         // Cards List Layout for Mac (Single Column)
                         LazyVStack(spacing: 20) {
-                            ForEach(cards) { card in
+                            ForEach(filteredCardSections) { section in
                                 MacDayCardView(
-                                    card: card,
+                                    card: section.card,
+                                    visibleItems: section.visibleItems,
+                                    isFilteringItems: isSearching && !section.isCardTitleMatch,
+                                    searchQuery: trimmedSearchText,
                                     addingText: Binding(
-                                        get: { addingTextByCard[card.id] ?? "" },
-                                        set: { addingTextByCard[card.id] = $0 }
+                                        get: { addingTextByCard[section.card.id] ?? "" },
+                                        set: { addingTextByCard[section.card.id] = $0 }
                                     ),
-                                    onAdd: { text in withAnimation { addItem(text: text, to: card) } },
+                                    onAdd: { text in withAnimation { addItem(text: text, to: section.card) } },
                                     onContinue: { item in
                                         showTargetPickerForItem = item
-                                        targetDate = Calendar.current.date(byAdding: .day, value: 1, to: card.date) ?? card.date
+                                        targetDate = Calendar.current.date(byAdding: .day, value: 1, to: section.card.date) ?? section.card.date
                                     },
                                     onEdit: { item in
                                         editingItem = item
@@ -198,7 +336,10 @@ struct MacTodoHomeView: View {
                 .frame(maxWidth: isCollectionBoxExpanded ? 650 : 760)
                 
                 MacCollectionBoxView(
-                    items: inboxItems,
+                    items: filteredInboxItems,
+                    totalItemCount: inboxItems.count,
+                    isSearching: isSearching,
+                    searchQuery: trimmedSearchText,
                     inputText: $inboxInputText,
                     onAdd: { text in
                         withAnimation {
@@ -269,6 +410,26 @@ struct MacTodoHomeView: View {
         } message: {
             Text("select_future_date_message")
         }
+        .onExitCommand {
+            if shouldShowExpandedSearch || isSearchFieldFocused {
+                withAnimation(collectionBoxAnimation) {
+                    collapseSearch()
+                }
+            }
+        }
+        .background(
+            Button(action: {
+                withAnimation(collectionBoxAnimation) {
+                    expandSearch()
+                }
+            }) {
+                EmptyView()
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut("f", modifiers: [.command])
+            .frame(width: 0, height: 0)
+            .opacity(0)
+        )
     }
     
     // MARK: - Logic Copied from TodoHomeView
@@ -363,15 +524,8 @@ struct MacTodoHomeView: View {
     }
     
     private func addInboxItem(text: String) {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        
-        let nextOrder = (inboxItems.map(\.orderIndex).max() ?? -1) + 1
-        let item = TodoItemV3(title: trimmed, card: nil)
-        item.orderIndex = nextOrder
-        modelContext.insert(item)
-        try? modelContext.save()
-        WidgetCenter.shared.reloadAllTimelines()
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        try? saveService.saveInboxItem(text: text)
     }
     
     private func delete(_ item: TodoItemV3) {
@@ -384,6 +538,43 @@ struct MacTodoHomeView: View {
             try? modelContext.save()
             WidgetCenter.shared.reloadAllTimelines()
         }
+    }
+
+    private func expandSearch() {
+        isSearchExpanded = true
+        isSearchFieldFocused = true
+    }
+
+    private func collapseSearch() {
+        searchText = ""
+        isSearchExpanded = false
+        isSearchFieldFocused = false
+    }
+}
+
+private struct MacTodoCardSearchSection: Identifiable {
+    let card: DailyCardV3
+    let visibleItems: [TodoItemV3]
+    let isCardTitleMatch: Bool
+
+    var id: UUID { card.id }
+}
+
+enum TodoSearchMatcher {
+    static func matches(_ text: String, query: String) -> Bool {
+        let normalizedQuery = normalize(query)
+        guard !normalizedQuery.isEmpty else { return true }
+        return normalize(text).contains(normalizedQuery)
+    }
+
+    static func matchesAny(_ texts: [String], query: String) -> Bool {
+        texts.contains { matches($0, query: query) }
+    }
+
+    static func normalize(_ text: String) -> String {
+        text
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
     }
 }
 
@@ -533,6 +724,9 @@ struct TodoDragHandleButton: View {
 
 struct MacCollectionBoxView: View {
     let items: [TodoItemV3]
+    let totalItemCount: Int
+    let isSearching: Bool
+    let searchQuery: String
     @Binding var inputText: String
     var onAdd: (String) -> Void
     var onEdit: (TodoItemV3) -> Void
@@ -552,7 +746,7 @@ struct MacCollectionBoxView: View {
                         .font(.system(size: 16, weight: .bold, design: .rounded))
                         .foregroundColor(DesignSystem.textPrimary)
                     
-                    Text("还没定好时间的事情放这里")
+                    Text(isSearching ? String(localized: "searching_inbox_subtitle") : String(localized: "inbox_subtitle"))
                         .font(.system(size: 13, weight: .regular, design: .rounded))
                         .foregroundColor(DesignSystem.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -560,7 +754,7 @@ struct MacCollectionBoxView: View {
                 
                 Spacer(minLength: 12)
                 
-                Text("\(items.count)")
+                Text(isSearching ? "\(items.count)/\(totalItemCount)" : "\(items.count)")
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundColor(DesignSystem.primary)
                     .padding(.horizontal, 10)
@@ -575,15 +769,15 @@ struct MacCollectionBoxView: View {
             VStack(spacing: 0) {
                 if items.isEmpty {
                     VStack(spacing: 12) {
-                        Image(systemName: "tray")
+                        Image(systemName: isSearching ? "magnifyingglass" : "tray")
                             .font(.system(size: 26, weight: .medium))
                             .foregroundColor(DesignSystem.textTertiary)
                         
-                        Text("把待办拖到这里暂存")
+                        Text(isSearching ? String(localized: "search_inbox_empty_title") : String(localized: "drag_todo_to_inbox_title"))
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundColor(DesignSystem.textPrimary)
                         
-                        Text("也可以直接输入一个还没安排日期的待办。")
+                        Text(isSearching ? String(localized: "search_inbox_empty_message") : String(localized: "inbox_empty_message"))
                             .font(.system(size: 13, weight: .regular, design: .rounded))
                             .foregroundColor(DesignSystem.textSecondary)
                     }
@@ -602,6 +796,7 @@ struct MacCollectionBoxView: View {
                             
                             MacTodoItemView(
                                 item: item,
+                                searchQuery: searchQuery,
                                 showsContinueAction: false,
                                 showsRepeatAction: false,
                                 onToggle: { point in
@@ -653,7 +848,7 @@ struct MacCollectionBoxView: View {
         .cornerRadius(DesignSystem.cardCorner)
         .overlay(
             RoundedRectangle(cornerRadius: DesignSystem.cardCorner)
-                .stroke(isDropTargeted ? Color.accentColor : DesignSystem.cardBorder, lineWidth: isDropTargeted ? 2 : 0.5)
+                .stroke(isDropTargeted ? DesignSystem.macAccent : DesignSystem.cardBorder, lineWidth: isDropTargeted ? 2 : 0.5)
         )
         .shadow(color: DesignSystem.shadowColor.opacity(0.6), radius: 14, x: 0, y: 6)
         .dropDestination(for: String.self) { itemIDs, _ in
@@ -668,6 +863,9 @@ struct MacCollectionBoxView: View {
 
 struct MacDayCardView: View {
     @Bindable var card: DailyCardV3
+    let visibleItems: [TodoItemV3]
+    let isFilteringItems: Bool
+    let searchQuery: String
     @Binding var addingText: String
     var onAdd: (String) -> Void
     var onContinue: (TodoItemV3) -> Void
@@ -684,9 +882,14 @@ struct MacDayCardView: View {
             // Card Header
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(card.displayTitle)
+                    Text(TodoSearchHighlighter.highlighted(card.displayTitle, query: searchQuery, baseColor: DesignSystem.textPrimary))
                         .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(DesignSystem.textPrimary)
+
+                    if isFilteringItems {
+                        Text(String(format: NSLocalizedString("search_visible_matches_format", comment: "Visible matches count"), visibleItems.count))
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundColor(DesignSystem.textSecondary)
+                    }
                 }
                 
                 Spacer()
@@ -719,10 +922,8 @@ struct MacDayCardView: View {
             
             // Items List
             VStack(spacing: 0) {
-                let sortedItems = (card.items ?? []).sorted { $0.orderIndex < $1.orderIndex }
-                
                 VStack(spacing: 0) {
-                    ForEach(Array(sortedItems.enumerated()), id: \.element.id) { index, item in
+                    ForEach(Array(visibleItems.enumerated()), id: \.element.id) { index, item in
                         VStack(spacing: 0) {
                             if index > 0 {
                                 Rectangle()
@@ -731,7 +932,7 @@ struct MacDayCardView: View {
                                     .padding(.leading, 52)
                             }
                             
-                            MacTodoItemView(item: item, onToggle: { point in
+                            MacTodoItemView(item: item, searchQuery: searchQuery, onToggle: { point in
                                 if item.isDone {
                                     onComplete(point)
                                 }
@@ -742,7 +943,7 @@ struct MacDayCardView: View {
                     }
                 }
                 
-                if !(card.items?.isEmpty ?? true) {
+                if !visibleItems.isEmpty {
                     Rectangle()
                         .fill(DesignSystem.separatorColor)
                         .frame(height: 0.5)
@@ -790,7 +991,7 @@ struct MacDayCardView: View {
             Group {
                 if isDropTargeted {
                     RoundedRectangle(cornerRadius: DesignSystem.cardCorner)
-                        .stroke(Color.accentColor, lineWidth: 2)
+                        .stroke(DesignSystem.macAccent, lineWidth: 2)
                 }
             }
         )
@@ -814,6 +1015,7 @@ struct MacDayCardView: View {
 
 struct MacTodoItemView: View {
     let item: TodoItemV3
+    var searchQuery: String = ""
     var showsContinueAction: Bool = true
     var showsRepeatAction: Bool = true
     var onToggle: (CGPoint) -> Void
@@ -894,10 +1096,9 @@ struct MacTodoItemView: View {
                         .clipShape(Capsule())
                     }
 
-                    Text(item.title)
+                    Text(TodoSearchHighlighter.highlighted(item.title, query: searchQuery, baseColor: item.isDone ? DesignSystem.textTertiary : DesignSystem.textPrimary))
                         .font(.system(size: 15, weight: item.isDone ? .regular : .medium, design: .rounded))
                         .strikethrough(item.isDone)
-                        .foregroundColor(item.isDone ? DesignSystem.textTertiary : DesignSystem.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                         .onTapGesture(count: 2) {
@@ -967,11 +1168,11 @@ struct MacTodoItemView: View {
                 }
 
                 if isDropTargeted {
-                    Color.accentColor.opacity(0.1)
+                    DesignSystem.macAccent.opacity(0.1)
 
                     VStack {
                         Rectangle()
-                            .fill(Color.accentColor)
+                            .fill(DesignSystem.macAccent)
                             .frame(height: 2)
                         Spacer()
                     }
@@ -1016,6 +1217,32 @@ private enum MacDailyCardTitleFormatter {
     }()
 }
 
+enum TodoSearchHighlighter {
+    static func highlighted(_ text: String, query: String, baseColor: Color) -> AttributedString {
+        var attributed = AttributedString(text)
+        attributed.foregroundColor = baseColor
+
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty else { return attributed }
+
+        guard let stringRange = text.range(
+            of: trimmedQuery,
+            options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive],
+            range: nil,
+            locale: .current
+        ) else {
+            return attributed
+        }
+
+        let nsRange = NSRange(stringRange, in: text)
+        guard let attributedRange = Range(nsRange, in: attributed) else { return attributed }
+
+        attributed[attributedRange].foregroundColor = DesignSystem.primary
+        attributed[attributedRange].backgroundColor = DesignSystem.primary.opacity(0.16)
+        return attributed
+    }
+}
+
 extension DailyCardV3 {
     var displayTitle: String {
         if let custom = customTitle, !custom.isEmpty {
@@ -1039,6 +1266,32 @@ extension DailyCardV3 {
         }
 
         return MacDailyCardTitleFormatter.shared.string(from: date)
+    }
+
+    var searchableTexts: [String] {
+        var texts: [String] = [displayTitle]
+
+        if let customTitle, !customTitle.isEmpty {
+            texts.append(customTitle)
+        }
+
+        let fullFormatter = DateFormatter()
+        fullFormatter.locale = .current
+        fullFormatter.dateStyle = .full
+        texts.append(fullFormatter.string(from: date))
+
+        let longFormatter = DateFormatter()
+        longFormatter.locale = .current
+        longFormatter.dateStyle = .long
+        texts.append(longFormatter.string(from: date))
+
+        let shortFormatter = DateFormatter()
+        shortFormatter.locale = .current
+        shortFormatter.dateStyle = .short
+        texts.append(shortFormatter.string(from: date))
+
+        texts.append(MacDailyCardTitleFormatter.shared.string(from: date))
+        return texts
     }
 }
 #endif

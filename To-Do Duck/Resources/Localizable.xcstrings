@@ -461,8 +461,56 @@
         }
       }
     },
+    "expand_memo_content" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展开"
+          }
+        }
+      }
+    },
+    "collapse_memo_content" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起"
+          }
+        }
+      }
+    },
     "drag_to_reorder" : {
 
+    },
+    "drag_todo_to_inbox_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag todos here to store them"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把待办拖到这里暂存"
+          }
+        }
+      }
     },
     "edit" : {
       "localizations" : {
@@ -692,6 +740,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "开启后即可在苹果多设备间同步数据"
+          }
+        }
+      }
+    },
+    "inbox_empty_message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can also type a todo here before deciding the date."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "也可以直接输入一个还没安排日期的待办。"
+          }
+        }
+      }
+    },
+    "inbox_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Things without a date go here"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没定好时间的事情放这里"
           }
         }
       }
@@ -1207,6 +1287,71 @@
         }
       }
     },
+    "search_cards_empty_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Matching Cards"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卡片中没有匹配项"
+          }
+        }
+      }
+    },
+    "search_inbox_empty_message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try another keyword, or create a new inbox todo directly."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换个关键词试试，或者直接创建新的收集箱待办。"
+          }
+        }
+      }
+    },
+    "search_inbox_empty_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Inbox Matches"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收集箱里没有匹配项"
+          }
+        }
+      }
+    },
+    "search_inbox_remaining_format" : {
+      "comment" : "Remaining inbox matches",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d matches remain in Inbox."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收集箱里还有 %d 条匹配结果。"
+          }
+        }
+      }
+    },
     "search_memo_placeholder" : {
       "localizations" : {
         "en" : {
@@ -1219,6 +1364,87 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜索备忘..."
+          }
+        }
+      }
+    },
+    "search_no_results_message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try another keyword, or search for a specific date or todo title."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "试试别的关键词，或者搜索具体日期和待办标题。"
+          }
+        }
+      }
+    },
+    "search_no_results_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Results"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有找到结果"
+          }
+        }
+      }
+    },
+    "search_todo_or_date_placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search todos or dates..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索待办或日期"
+          }
+        }
+      }
+    },
+    "search_visible_matches_format" : {
+      "comment" : "Visible matches count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing %d matching todos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示 %d 条匹配待办"
+          }
+        }
+      }
+    },
+    "searching_inbox_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matching inbox todos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索收集箱里的待办结果"
           }
         }
       }
@@ -1695,16 +1921,22 @@
     "不允许选择过去日期" : {
 
     },
-    "也可以直接输入一个还没安排日期的待办。" : {
-
-    },
     "任务内容" : {
 
     },
     "优先级" : {
 
     },
+    "保存" : {
+
+    },
+    "保存并继续" : {
+
+    },
     "允许选择过去日期延续" : {
+
+    },
+    "全局快捷键 %@，可在收集箱和备忘之间快速切换。" : {
 
     },
     "删除" : {
@@ -1749,7 +1981,10 @@
     "待办事项" : {
 
     },
-    "把待办拖到这里暂存" : {
+    "快捷键 %@" : {
+
+    },
+    "快速收集" : {
 
     },
     "搜索…" : {
@@ -1773,10 +2008,16 @@
     "添加" : {
 
     },
+    "点击后按下新的全局快捷键，按 Esc 取消" : {
+
+    },
     "确定要删除这张卡片及其所有待办事项吗？此操作不可恢复。" : {
 
     },
     "确认延续" : {
+
+    },
+    "类型" : {
 
     },
     "继续一天" : {
@@ -1803,13 +2044,16 @@
     "输入待办回车↩︎" : {
 
     },
-    "还没定好时间的事情放这里" : {
-
-    },
     "进度" : {
 
     },
+    "连续录入" : {
+
+    },
     "选择目标日期" : {
+
+    },
+    "默认连续录入" : {
 
     }
   },

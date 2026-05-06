@@ -224,11 +224,12 @@ struct MemoCardView: View {
                 }
             }
 
-            Text(memo.content)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundColor(DesignSystem.onSurface)
-                .lineSpacing(4)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            ExpandableMemoText(
+                content: memo.content,
+                font: .system(size: 14, weight: .medium, design: .rounded),
+                lineSpacing: 4,
+                textColor: DesignSystem.onSurface
+            )
         }
         .padding(16)
         .background(

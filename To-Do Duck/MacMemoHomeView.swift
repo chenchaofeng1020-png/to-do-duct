@@ -9,6 +9,7 @@ struct MacMemoHomeView: View {
     @State private var searchText: String = ""
     @State private var selectedMemo: MemoCardV3?
     @FocusState private var isInputFocused: Bool
+    private let saveService = QuickCaptureSaveService(modelContainer: To_Do_DuckApp.sharedModelContainer)
     
     private var filteredMemos: [MemoCardV3] {
         if searchText.isEmpty {
@@ -169,12 +170,10 @@ struct MacMemoHomeView: View {
     }
     
     private func saveMemo() {
-        let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        
+        guard !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
         withAnimation {
-            let newMemo = MemoCardV3(content: trimmed)
-            modelContext.insert(newMemo)
+            try? saveService.saveMemo(text: inputText)
             inputText = ""
             isInputFocused = true // Keep focus for rapid entry
         }
@@ -227,12 +226,13 @@ struct MacMemoCardView: View {
                 .frame(width: 24, height: 24)
             }
             
-            Text(memo.content)
-                .font(.system(size: 14, weight: .regular, design: .rounded))
-                .foregroundColor(DesignSystem.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled) // Allow text selection
-                .lineSpacing(4)
+            ExpandableMemoText(
+                content: memo.content,
+                font: .system(size: 14, weight: .regular, design: .rounded),
+                lineSpacing: 4,
+                textColor: DesignSystem.textPrimary,
+                allowsSelection: true
+            )
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)

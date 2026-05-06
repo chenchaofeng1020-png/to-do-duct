@@ -1,3 +1,5 @@
 build/DerivedData/
 build/DerivedDataCodex/
 build/DerivedDataLocal/
+.derivedData/
+.derivedData-ios/

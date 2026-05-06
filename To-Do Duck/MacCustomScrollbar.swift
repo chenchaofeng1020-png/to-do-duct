@@ -88,10 +88,16 @@ struct ScrollbarCustomizer: NSViewRepresentable {
     }
 }
 
+#endif
+
 extension View {
     /// 应用自定义的浅色细滚动条
+    @ViewBuilder
     func thinScrollbar() -> some View {
+        #if os(macOS)
         self.background(ScrollbarCustomizer())
+        #else
+        self
+        #endif
     }
 }
-#endif

@@ -2,6 +2,9 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 import WidgetKit
+#if os(macOS)
+import AppKit
+#endif
 
 struct MainView: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -75,11 +78,7 @@ struct TodoEditSheet: View {
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundColor(DesignSystem.textSecondary)
 
-                TextEditor(text: $editingTitle)
-                    .font(.system(size: 16, weight: .regular, design: .rounded))
-                    .focused($isFocused)
-                    .scrollContentBackground(.hidden)
-                    .scrollIndicators(.hidden)
+                TodoEditTitleEditor(text: $editingTitle, isFocused: $isFocused)
                     .frame(minHeight: 60, maxHeight: 100)
                     .padding(.horizontal, -4)
             }
@@ -180,6 +179,116 @@ struct TodoEditSheet: View {
         dismiss()
     }
 }
+
+private struct TodoEditTitleEditor: View {
+    @Binding var text: String
+    var isFocused: FocusState<Bool>.Binding
+
+    var body: some View {
+        #if os(macOS)
+        MacTodoEditTitleTextView(text: $text, isFocused: isFocused)
+        #else
+        TextEditor(text: $text)
+            .font(.system(size: 16, weight: .regular, design: .rounded))
+            .focused(isFocused)
+            .scrollContentBackground(.hidden)
+            .scrollIndicators(.hidden)
+        #endif
+    }
+}
+
+#if os(macOS)
+private struct MacTodoEditTitleTextView: NSViewRepresentable {
+    @Binding var text: String
+    var isFocused: FocusState<Bool>.Binding
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.drawsBackground = false
+        scrollView.borderType = .noBorder
+        scrollView.hasVerticalScroller = false
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+        scrollView.scrollerStyle = .overlay
+        scrollView.verticalScroller = nil
+
+        let textView = NSTextView()
+        textView.delegate = context.coordinator
+        textView.drawsBackground = false
+        textView.isRichText = false
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.autoresizingMask = [.width]
+        textView.allowsUndo = true
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.heightTracksTextView = false
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.textContainerInset = NSSize(width: 0, height: 2)
+        textView.textColor = .labelColor
+        textView.insertionPointColor = NSColor(hex: "0c6d45")
+        textView.font = Self.editorFont
+        textView.string = text
+
+        scrollView.documentView = textView
+        context.coordinator.textView = textView
+
+        DispatchQueue.main.async {
+            textView.window?.makeFirstResponder(textView)
+            isFocused.wrappedValue = true
+        }
+
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        scrollView.hasVerticalScroller = false
+        scrollView.verticalScroller = nil
+
+        guard let textView = scrollView.documentView as? NSTextView else { return }
+
+        if textView.string != text {
+            textView.string = text
+        }
+
+        if textView.font != Self.editorFont {
+            textView.font = Self.editorFont
+        }
+
+        DispatchQueue.main.async {
+            if isFocused.wrappedValue {
+                textView.window?.makeFirstResponder(textView)
+            } else if textView.window?.firstResponder === textView {
+                textView.window?.makeFirstResponder(nil)
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text)
+    }
+
+    private static var editorFont: NSFont {
+        if let descriptor = NSFont.systemFont(ofSize: 16).fontDescriptor.withDesign(.rounded) {
+            return NSFont(descriptor: descriptor, size: 16) ?? .systemFont(ofSize: 16)
+        }
+        return .systemFont(ofSize: 16)
+    }
+
+    final class Coordinator: NSObject, NSTextViewDelegate {
+        @Binding var text: String
+        weak var textView: NSTextView?
+
+        init(text: Binding<String>) {
+            self._text = text
+        }
+
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            text = textView.string
+        }
+    }
+}
+#endif
 
 // MARK: - 紧凑进度滑轨（用于编辑面板）
 struct CompactProgressSlider: View {
@@ -1173,7 +1282,7 @@ struct TargetDatePickerSheet: View {
                             date: formatDate(nextMondayDate),
                             weekday: formatWeekday(nextMondayDate),
                             icon: "briefcase.fill",
-                            color: .blue,
+                            color: DesignSystem.macAccent,
                             isSelected: Calendar.current.isDate(targetDate, inSameDayAs: nextMondayDate)
                         ) {
                             withAnimation {
