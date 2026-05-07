@@ -47,10 +47,10 @@ struct LargeWidgetView: View {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(entry.date, format: .dateTime.month(.wide).day())
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .font(.system(size: 24, weight: .regular, design: .rounded))
                         .foregroundColor(DesignSystem.textPrimary)
                     Text(entry.date, format: .dateTime.weekday(.wide))
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .font(.system(size: 16, weight: .regular, design: .rounded))
                         .foregroundColor(DesignSystem.textSecondary)
                 }
                 Spacer()
@@ -66,11 +66,11 @@ struct LargeWidgetView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("今日进度")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(DesignSystem.textSecondary)
                     Spacer()
                     Text("\(entry.completedCount)/\(entry.totalCount)")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(DesignSystem.textPrimary)
                 }
                 
@@ -102,7 +102,7 @@ struct LargeWidgetView: View {
                                 .foregroundColor(DesignSystem.checkedColor)
                             Text("今日任务全搞定！\n好好休息一下吧~")
                                 .multilineTextAlignment(.leading)
-                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                .font(.system(size: 15, weight: .regular, design: .rounded))
                                 .foregroundColor(DesignSystem.textSecondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -113,7 +113,7 @@ struct LargeWidgetView: View {
                                 .font(.system(size: 30))
                                 .foregroundColor(DesignSystem.textTertiary)
                             Text("点击创建今日卡片")
-                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                .font(.system(size: 15, weight: .regular, design: .rounded))
                                 .foregroundColor(DesignSystem.textSecondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -147,7 +147,7 @@ struct LargeWidgetView: View {
                             }
 
                             Text(task.title)
-                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                .font(.system(size: 15, weight: .regular, design: .rounded))
                                 .lineLimit(1)
                                 .foregroundColor(task.isDone ? DesignSystem.textTertiary : DesignSystem.textPrimary)
                                 .strikethrough(task.isDone)
@@ -158,7 +158,7 @@ struct LargeWidgetView: View {
                     
                     if remainingTaskCount > 0 {
                         Text("还有 \(remainingTaskCount) 项待处理")
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .font(.system(size: 13, weight: .regular, design: .rounded))
                             .foregroundColor(DesignSystem.textTertiary)
                             .padding(.top, 2)
                     }
@@ -208,11 +208,11 @@ struct SmallWidgetView: View {
             // 顶部日期
             HStack {
                 Text(entry.date, format: .dateTime.weekday())
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
                     .foregroundColor(DesignSystem.textSecondary)
                 Spacer()
                 Text("\(entry.completedCount)/\(entry.totalCount)")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
                     .foregroundColor(DesignSystem.textPrimary)
             }
             
@@ -227,7 +227,7 @@ struct SmallWidgetView: View {
             
             // 底部状态
             Text(statusText)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.system(size: 16, weight: .regular, design: .rounded))
                 .foregroundColor(DesignSystem.textPrimary)
         }
         .padding()
@@ -258,12 +258,12 @@ struct MediumWidgetView: View {
             // 左侧概览
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.date, format: .dateTime.day())
-                    .font(.system(size: 29, weight: .bold, design: .rounded))
+                    .font(.system(size: 29, weight: .regular, design: .rounded))
                     .foregroundColor(DesignSystem.textPrimary)
                     .padding(.top, 1)
 
                 Text(entry.date, format: .dateTime.weekday())
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .regular, design: .rounded))
                     .foregroundColor(DesignSystem.textSecondary)
 
                 Spacer()
@@ -271,7 +271,7 @@ struct MediumWidgetView: View {
                 // 进度条
                 VStack(alignment: .leading, spacing: 2) {
                     Text("剩余 \(entry.totalCount - entry.completedCount) 项")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: 10, weight: .regular, design: .rounded))
                         .foregroundColor(DesignSystem.textSecondary)
                     
                     GeometryReader { geo in
@@ -311,7 +311,7 @@ struct MediumWidgetView: View {
                                 .font(.system(size: 22))
                                 .foregroundColor(DesignSystem.checkedColor)
                             Text("今日任务全搞定！")
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .font(.system(size: 13, weight: .regular, design: .rounded))
                                 .foregroundColor(DesignSystem.textPrimary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -322,7 +322,7 @@ struct MediumWidgetView: View {
                                 .font(.system(size: 22))
                                 .foregroundColor(DesignSystem.textTertiary)
                             Text("创建今日卡片")
-                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .font(.system(size: 13, weight: .regular, design: .rounded))
                                 .foregroundColor(DesignSystem.textSecondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -356,7 +356,7 @@ struct MediumWidgetView: View {
                             }
 
                             Text(task.title)
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .font(.system(size: 14, weight: .regular, design: .rounded))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.9)
                                 .foregroundColor(task.isDone ? DesignSystem.textTertiary : DesignSystem.textPrimary)
@@ -367,7 +367,7 @@ struct MediumWidgetView: View {
                     
                     if remainingTaskCount > 0 {
                         Text("还有 \(remainingTaskCount) 项")
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .font(.system(size: 11, weight: .regular, design: .rounded))
                             .foregroundColor(DesignSystem.textTertiary)
                     }
                 }
