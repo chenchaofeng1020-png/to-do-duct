@@ -120,6 +120,25 @@ enum DesignSystem {
     
     #if os(macOS)
     static let softBackground = Color(nsColor: .windowBackgroundColor)
+    static var macPrimaryTextColor: NSColor {
+        NSColor(name: nil, dynamicProvider: { appearance in
+            if appearance.name == .darkAqua {
+                return NSColor(hex: "e0e3e1")
+            } else {
+                return NSColor(hex: "2d3432")
+            }
+        })
+    }
+
+    static var macSecondaryTextColor: NSColor {
+        NSColor(name: nil, dynamicProvider: { appearance in
+            if appearance.name == .darkAqua {
+                return NSColor(hex: "bfc9c4")
+            } else {
+                return NSColor(hex: "59615f")
+            }
+        })
+    }
     
     static var warmBackground: Color {
         Color(nsColor: NSColor(name: nil, dynamicProvider: { appearance in
@@ -236,9 +255,14 @@ enum DesignSystem {
     #endif
     
     static let creamBackground = Color(red: 242/255, green: 242/255, blue: 235/255) // Keep for reference if needed
-    
+
+    #if os(macOS)
+    static let textPrimary = Color(nsColor: macPrimaryTextColor)
+    static let textSecondary = Color(nsColor: macSecondaryTextColor)
+    #else
     static let textPrimary = Color.primary
     static let textSecondary = Color.secondary
+    #endif
     
     static let checkedColor = Color(red: 0.35, green: 0.78, blue: 0.55) // 清新绿色
     

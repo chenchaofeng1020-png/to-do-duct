@@ -11,6 +11,9 @@ struct MacTodoHomeView: View {
     private let collectionBoxCollapsedOffset: CGFloat = 18
     private let collectionBoxAnimation: Animation = .spring(response: 0.44, dampingFraction: 0.88, blendDuration: 0.18)
     private let searchExpandedWidth: CGFloat = 332
+    private let compactHeaderWidthThreshold: CGFloat = 620
+    private let headerHeight: CGFloat = 64
+    let selectedDate: Date?
 
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\DailyCardV3.date, order: .reverse), SortDescriptor(\DailyCardV3.createdAt, order: .reverse)]) private var cards: [DailyCardV3]
@@ -29,7 +32,8 @@ struct MacTodoHomeView: View {
     @FocusState private var isSearchFieldFocused: Bool
     private let saveService = QuickCaptureSaveService(modelContainer: To_Do_DuckApp.sharedModelContainer)
 
-    init() {
+    init(selectedDate: Date?) {
+        self.selectedDate = selectedDate
         _inboxItems = Query(
             filter: #Predicate<TodoItemV3> { $0.card == nil },
             sort: [SortDescriptor(\TodoItemV3.orderIndex), SortDescriptor(\TodoItemV3.createdAt)]
@@ -67,7 +71,12 @@ struct MacTodoHomeView: View {
     }
 
     private var filteredCardSections: [MacTodoCardSearchSection] {
-        cards.compactMap { card in
+        cards
+            .filter { card in
+                guard let selectedDate else { return true }
+                return Calendar.current.isDate(card.date, inSameDayAs: selectedDate)
+            }
+            .compactMap { card in
             let allItems = (card.items ?? []).sorted { $0.orderIndex < $1.orderIndex }
             guard isSearching else {
                 return MacTodoCardSearchSection(card: card, visibleItems: allItems, isCardTitleMatch: false)
@@ -96,6 +105,11 @@ struct MacTodoHomeView: View {
         }
     }
 
+    private var hasCardsForSelectedDate: Bool {
+        guard let selectedDate else { return !cards.isEmpty }
+        return cards.contains { Calendar.current.isDate($0.date, inSameDayAs: selectedDate) }
+    }
+
     private var hasAnySearchResults: Bool {
         !filteredCardSections.isEmpty || !filteredInboxItems.isEmpty
     }
@@ -109,167 +123,13 @@ struct MacTodoHomeView: View {
             HStack(alignment: .top, spacing: 24) {
                 VStack(spacing: 20) {
                     // Header Area with Quick Actions
-                    HStack(alignment: .bottom) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 4) {
-                                Text("Hi")
-                                HStack(spacing: 0) {
-                                    Text("👋")
-                                        .rotationEffect(.degrees(waveRotation), anchor: .bottomTrailing)
-                                    Text(",")
-                                }
-                                Text(greeting + "～")
-                            }
-                            .font(.largeTitle)
-                            .bold()
-                            .task {
-                                while !Task.isCancelled {
-                                    // Waving sequence: 3 fast waves
-                                    for _ in 0..<3 {
-                                        withAnimation(.easeInOut(duration: 0.15)) { waveRotation = 15 }
-                                        try? await Task.sleep(nanoseconds: 150_000_000)
-                                        withAnimation(.easeInOut(duration: 0.15)) { waveRotation = -5 }
-                                        try? await Task.sleep(nanoseconds: 150_000_000)
-                                    }
-                                    
-                                    // Reset to neutral position
-                                    withAnimation(.spring()) { waveRotation = 0 }
-                                    
-                                    // Pause for 2 seconds
-                                    try? await Task.sleep(nanoseconds: 2_000_000_000)
-                                }
-                            }
-                            
-                            Text(Date(), format: .dateTime.year().month().day().weekday(.wide))
-                                .font(.headline)
-                                .bold()
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        ZStack(alignment: .trailing) {
-                            HStack(spacing: 10) {
-                                Button(action: {
-                                    withAnimation { createTodayCard() }
-                                }) {
-                                    Label("new_day", systemImage: "plus.circle.fill")
-                                        .font(.headline)
-                                        .foregroundStyle(.white)
-                                        .padding(.horizontal, 18)
-                                        .frame(height: headerActionHeight)
-                                        .background(DesignSystem.primary)
-                                        .clipShape(Capsule())
-                                }
-                                .buttonStyle(.plain)
+                    GeometryReader { proxy in
+                        let showGreeting = proxy.size.width >= compactHeaderWidthThreshold
 
-                                Button {
-                                    withAnimation(collectionBoxAnimation) {
-                                        expandSearch()
-                                    }
-                                } label: {
-                                    Image(systemName: "magnifyingglass")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .frame(width: 20, height: 20)
-                                        .foregroundStyle(DesignSystem.textPrimary)
-                                        .padding(.horizontal, 16)
-                                        .frame(height: headerActionHeight)
-                                        .background(DesignSystem.surfaceContainerHigh)
-                                        .clipShape(Capsule())
-                                }
-                                .buttonStyle(.plain)
-                                .help("search_todo_or_date_placeholder")
-
-                                Button {
-                                    withAnimation(collectionBoxAnimation) {
-                                        isCollectionBoxExpanded.toggle()
-                                    }
-                                } label: {
-                                    ZStack(alignment: .topTrailing) {
-                                        Image(systemName: isCollectionBoxExpanded ? "sidebar.right" : "tray.full")
-                                            .font(.system(size: 15, weight: .semibold))
-                                            .frame(width: 20, height: 20)
-                                            .foregroundStyle(DesignSystem.textPrimary)
-                                            .padding(.horizontal, 16)
-                                            .frame(height: headerActionHeight)
-                                            .background(
-                                                DesignSystem.surfaceContainerHigh
-                                                    .opacity(isCollectionBoxExpanded ? 1 : 0.82)
-                                            )
-                                            .clipShape(Capsule())
-
-                                        if !inboxItems.isEmpty {
-                                            Text(inboxBadgeText)
-                                                .font(.system(size: 10, weight: .bold, design: .rounded))
-                                                .foregroundStyle(.white)
-                                                .padding(.horizontal, 6)
-                                                .frame(height: 18)
-                                                .background(DesignSystem.primary)
-                                                .clipShape(Capsule())
-                                                .overlay(
-                                                    Capsule()
-                                                        .stroke(DesignSystem.background, lineWidth: 1)
-                                                )
-                                                .offset(x: 8, y: -4)
-                                        }
-                                    }
-                                }
-                                .buttonStyle(.plain)
-                                .help(isCollectionBoxExpanded ? "收起收集箱" : "展开收集箱")
-                            }
-                            .opacity(shouldShowExpandedSearch ? 0 : 1)
-                            .allowsHitTesting(!shouldShowExpandedSearch)
-
-                            HStack(spacing: 8) {
-                                Image(systemName: "magnifyingglass")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(DesignSystem.textTertiary)
-
-                                TextField("search_todo_or_date_placeholder", text: $searchText)
-                                    .textFieldStyle(.plain)
-                                    .font(.system(size: 14, weight: .regular, design: .rounded))
-                                    .foregroundStyle(DesignSystem.textPrimary)
-                                    .focused($isSearchFieldFocused)
-
-                                if !searchText.isEmpty {
-                                    Button {
-                                        searchText = ""
-                                        isSearchFieldFocused = true
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.system(size: 14))
-                                            .foregroundStyle(DesignSystem.textTertiary)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-
-                                Button {
-                                    withAnimation(collectionBoxAnimation) {
-                                        collapseSearch()
-                                    }
-                                } label: {
-                                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(DesignSystem.textTertiary)
-                                        .frame(width: 22, height: 22)
-                                        .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                            }
-                            .padding(.horizontal, 12)
-                            .frame(width: searchExpandedWidth, height: headerActionHeight)
-                            .background(DesignSystem.surfaceContainerHigh)
-                            .clipShape(Capsule())
-                            .overlay(
-                                Capsule()
-                                    .stroke(isSearchFieldFocused ? DesignSystem.macAccent.opacity(0.55) : DesignSystem.cardBorder, lineWidth: isSearchFieldFocused ? 1.2 : 0.8)
-                            )
-                            .opacity(shouldShowExpandedSearch ? 1 : 0)
-                            .allowsHitTesting(shouldShowExpandedSearch)
-                            .scaleEffect(shouldShowExpandedSearch ? 1 : 0.96, anchor: .trailing)
-                        }
-                        .frame(width: searchExpandedWidth, alignment: .trailing)
+                        headerView(showGreeting: showGreeting)
+                            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .bottomLeading)
                     }
+                    .frame(height: headerHeight)
                     .padding(.top, 20)
                     
                     if isSearching && !hasAnySearchResults {
@@ -279,14 +139,14 @@ struct MacTodoHomeView: View {
                             Text("search_no_results_message")
                         }
                         .padding(.top, 50)
-                    } else if cards.isEmpty {
+                    } else if selectedDate != nil && !hasCardsForSelectedDate {
                         ContentUnavailableView {
-                            Label("todo_list_empty", systemImage: "moon.zzz.fill")
+                            Label("todo_list_empty", systemImage: "calendar")
                         } description: {
-                            Text("create_today_hint")
+                            Text((selectedDate ?? Date()).formatted(date: .complete, time: .omitted) + " 暂无待办卡片")
                         } actions: {
-                            Button("create_today") {
-                                withAnimation { createTodayCard() }
+                            Button("new_day") {
+                                withAnimation { createCard(for: selectedDate ?? Date()) }
                             }
                         }
                         .padding(.top, 50)
@@ -431,6 +291,183 @@ struct MacTodoHomeView: View {
             .opacity(0)
         )
     }
+
+    @ViewBuilder
+    private func headerView(showGreeting: Bool) -> some View {
+        HStack(alignment: .bottom) {
+            if showGreeting {
+                greetingSection
+                    .fixedSize(horizontal: true, vertical: false)
+                Spacer(minLength: 0)
+                headerActions(alignment: .trailing)
+            } else {
+                headerActions(alignment: .leading)
+                Spacer(minLength: 0)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var greetingSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Text("Hi")
+                HStack(spacing: 0) {
+                    Text("👋")
+                        .rotationEffect(.degrees(waveRotation), anchor: .bottomTrailing)
+                    Text(",")
+                }
+                Text(greeting + "～")
+            }
+            .font(.largeTitle)
+            .bold()
+            .lineLimit(1)
+            .task {
+                while !Task.isCancelled {
+                    for _ in 0..<3 {
+                        withAnimation(.easeInOut(duration: 0.15)) { waveRotation = 15 }
+                        try? await Task.sleep(nanoseconds: 150_000_000)
+                        withAnimation(.easeInOut(duration: 0.15)) { waveRotation = -5 }
+                        try? await Task.sleep(nanoseconds: 150_000_000)
+                    }
+
+                    withAnimation(.spring()) { waveRotation = 0 }
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                }
+            }
+
+            Text(Date(), format: .dateTime.year().month().day().weekday(.wide))
+                .font(.headline)
+                .bold()
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+    }
+
+    private func headerActions(alignment: Alignment) -> some View {
+        ZStack(alignment: alignment) {
+            HStack(spacing: 10) {
+                Button(action: {
+                    withAnimation { createTodayCard() }
+                }) {
+                    Label("new_day", systemImage: "plus.circle.fill")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 18)
+                        .frame(height: headerActionHeight)
+                        .background(DesignSystem.primary)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    withAnimation(collectionBoxAnimation) {
+                        expandSearch()
+                    }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 14, weight: .semibold))
+                        .frame(width: 20, height: 20)
+                        .foregroundStyle(DesignSystem.textPrimary)
+                        .padding(.horizontal, 16)
+                        .frame(height: headerActionHeight)
+                        .background(DesignSystem.surfaceContainerHigh)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help("search_todo_or_date_placeholder")
+
+                Button {
+                    withAnimation(collectionBoxAnimation) {
+                        isCollectionBoxExpanded.toggle()
+                    }
+                } label: {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: isCollectionBoxExpanded ? "sidebar.right" : "tray.full")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 20, height: 20)
+                            .foregroundStyle(DesignSystem.textPrimary)
+                            .padding(.horizontal, 16)
+                            .frame(height: headerActionHeight)
+                            .background(
+                                DesignSystem.surfaceContainerHigh
+                                    .opacity(isCollectionBoxExpanded ? 1 : 0.82)
+                            )
+                            .clipShape(Capsule())
+
+                        if !inboxItems.isEmpty {
+                            Text(inboxBadgeText)
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .frame(height: 18)
+                                .background(DesignSystem.primary)
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(DesignSystem.background, lineWidth: 1)
+                                )
+                                .offset(x: 8, y: -4)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .help(isCollectionBoxExpanded ? "收起收集箱" : "展开收集箱")
+            }
+            .opacity(shouldShowExpandedSearch ? 0 : 1)
+            .allowsHitTesting(!shouldShowExpandedSearch)
+
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(DesignSystem.textTertiary)
+
+                TextField("search_todo_or_date_placeholder", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                    .foregroundStyle(DesignSystem.textPrimary)
+                    .focused($isSearchFieldFocused)
+
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                        isSearchFieldFocused = true
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(DesignSystem.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Button {
+                    withAnimation(collectionBoxAnimation) {
+                        collapseSearch()
+                    }
+                } label: {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(DesignSystem.textTertiary)
+                        .frame(width: 22, height: 22)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 12)
+            .frame(width: searchExpandedWidth, height: headerActionHeight)
+            .background(DesignSystem.surfaceContainerHigh)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(isSearchFieldFocused ? DesignSystem.macAccent.opacity(0.55) : DesignSystem.cardBorder, lineWidth: isSearchFieldFocused ? 1.2 : 0.8)
+            )
+            .opacity(shouldShowExpandedSearch ? 1 : 0)
+            .allowsHitTesting(shouldShowExpandedSearch)
+            .scaleEffect(shouldShowExpandedSearch ? 1 : 0.96, anchor: .trailing)
+        }
+        .frame(width: searchExpandedWidth, alignment: alignment)
+        .fixedSize(horizontal: true, vertical: false)
+    }
     
     // MARK: - Logic Copied from TodoHomeView
     
@@ -476,6 +513,36 @@ struct MacTodoHomeView: View {
         
         checkAndAddRepeatTasks(to: card)
         
+        try? modelContext.save()
+    }
+
+    private func createCard(for date: Date) {
+        let calendar = Calendar.current
+        let targetDate = calendar.startOfDay(for: date)
+        let existingCard = cards.first { calendar.isDate($0.date, inSameDayAs: targetDate) }
+        if existingCard != nil { return }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = NSLocalizedString("card_date_format", comment: "Date format for card title")
+        let defaultDateTitle = formatter.string(from: targetDate)
+
+        var titleToUse: String? = nil
+        let existingTitles = Set(cards.filter { calendar.isDate($0.date, inSameDayAs: targetDate) }.map { $0.customTitle ?? defaultDateTitle })
+
+        if existingTitles.contains(defaultDateTitle) {
+            var counter = 1
+            var candidate = "\(defaultDateTitle) (\(counter))"
+            while existingTitles.contains(candidate) {
+                counter += 1
+                candidate = "\(defaultDateTitle) (\(counter))"
+            }
+            titleToUse = candidate
+        }
+
+        let card = DailyCardV3(date: targetDate)
+        card.customTitle = titleToUse
+        modelContext.insert(card)
+        checkAndAddRepeatTasks(to: card)
         try? modelContext.save()
     }
     

@@ -1,22 +1,29 @@
+#if os(macOS)
 import SwiftUI
 import SwiftData
+import AppKit
 
-#if os(macOS)
 struct MacMemoHomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \MemoCardV3.createdAt, order: .reverse) private var memos: [MemoCardV3]
+    let selectedDate: Date?
     @State private var inputText: String = ""
+    @State private var inputAttributedText: NSAttributedString = MemoRichTextFactory.makeAttributedString(from: "", fontSize: 16)
     @State private var searchText: String = ""
     @State private var selectedMemo: MemoCardV3?
     @FocusState private var isInputFocused: Bool
+    @StateObject private var inputEditorState = MacMemoEditorState()
     private let saveService = QuickCaptureSaveService(modelContainer: To_Do_DuckApp.sharedModelContainer)
     
     private var filteredMemos: [MemoCardV3] {
-        if searchText.isEmpty {
-            return memos
-        } else {
-            return memos.filter { $0.content.localizedCaseInsensitiveContains(searchText) }
+        let dateFiltered = memos.filter {
+            guard let selectedDate else { return true }
+            return Calendar.current.isDate($0.createdAt, inSameDayAs: selectedDate)
         }
+        if searchText.isEmpty {
+            return dateFiltered
+        }
+        return dateFiltered.filter { $0.content.localizedCaseInsensitiveContains(searchText) }
     }
     
     var body: some View {
@@ -70,33 +77,42 @@ struct MacMemoHomeView: View {
 
                 LazyVStack(spacing: 20) {
                     Section {
-                        ForEach(filteredMemos) { memo in
-                            MacMemoCardView(memo: memo, onEdit: {
-                                selectedMemo = memo
-                            }, onDelete: {
-                                withAnimation {
-                                    modelContext.delete(memo)
-                                }
-                            })
-                                .onTapGesture {
+                        if selectedDate != nil && filteredMemos.isEmpty {
+                            ContentUnavailableView {
+                                Label("当天没有备忘", systemImage: "square.and.pencil")
+                            } description: {
+                                Text((selectedDate ?? Date()).formatted(date: .complete, time: .omitted))
+                            }
+                            .padding(.top, 20)
+                        } else {
+                            ForEach(filteredMemos) { memo in
+                                MacMemoCardView(memo: memo, onEdit: {
                                     selectedMemo = memo
-                                }
-                                .contextMenu {
-                                    Button {
-                                        NSPasteboard.general.clearContents()
-                                        NSPasteboard.general.setString(memo.content, forType: .string)
-                                    } label: {
-                                        Label("copy", systemImage: "doc.on.doc")
+                                }, onDelete: {
+                                    withAnimation {
+                                        modelContext.delete(memo)
                                     }
-                                    
-                                    Button(role: .destructive) {
-                                        withAnimation {
-                                            modelContext.delete(memo)
+                                })
+                                    .onTapGesture {
+                                        selectedMemo = memo
+                                    }
+                                    .contextMenu {
+                                        Button {
+                                            NSPasteboard.general.clearContents()
+                                            NSPasteboard.general.setString(memo.content, forType: .string)
+                                        } label: {
+                                            Label("copy", systemImage: "doc.on.doc")
                                         }
-                                    } label: {
-                                        Label("delete", systemImage: "trash")
+                                        
+                                        Button(role: .destructive) {
+                                            withAnimation {
+                                                modelContext.delete(memo)
+                                            }
+                                        } label: {
+                                            Label("delete", systemImage: "trash")
+                                        }
                                     }
-                                }
+                            }
                         }
                     } header: {
                         // Sticky Input Area
@@ -111,7 +127,13 @@ struct MacMemoHomeView: View {
                                         .allowsHitTesting(false)
                                 }
                                 
-                                MacMemoEditor(text: $inputText)
+                                MacMemoEditor(
+                                    text: $inputText,
+                                    attributedText: $inputAttributedText,
+                                    editorState: inputEditorState,
+                                    fontSize: 16,
+                                    onFocusChange: { isInputFocused = $0 }
+                                )
                                     .frame(minHeight: (isInputFocused || !inputText.isEmpty) ? 80 : 30, alignment: .top)
                                     .focused($isInputFocused)
                             }
@@ -121,10 +143,13 @@ struct MacMemoHomeView: View {
                             .padding(.bottom, 8)
                             
                             HStack {
-                                Text("shortcut_save_memo")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .opacity((isInputFocused || !inputText.isEmpty) ? 1 : 0)
+                                HStack(spacing: 10) {
+                                    MemoStyleToolbar(editorState: inputEditorState, fontSize: 16)
+                                    Text("shortcut_save_memo")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .opacity((isInputFocused || !inputText.isEmpty) ? 1 : 0)
                                 
                                 Spacer()
                                 
@@ -173,8 +198,12 @@ struct MacMemoHomeView: View {
         guard !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
         withAnimation {
-            try? saveService.saveMemo(text: inputText)
+            try? saveService.saveMemo(
+                text: inputText,
+                richTextData: MemoRichTextCodec.encode(inputAttributedText)
+            )
             inputText = ""
+            inputAttributedText = MemoRichTextFactory.makeAttributedString(from: "", fontSize: 16)
             isInputFocused = true // Keep focus for rapid entry
         }
     }
@@ -226,13 +255,20 @@ struct MacMemoCardView: View {
                 .frame(width: 24, height: 24)
             }
             
-            ExpandableMemoText(
-                content: memo.content,
-                font: .system(size: 14, weight: .regular, design: .rounded),
-                lineSpacing: 4,
-                textColor: DesignSystem.textPrimary,
-                allowsSelection: true
-            )
+            if memo.hasCustomRichTextFormatting(fontSize: 14) {
+                ExpandableMemoText(
+                    attributedContent: memo.attributedContent(fontSize: 14),
+                    allowsSelection: true
+                )
+            } else {
+                ExpandableMemoText(
+                    content: memo.content,
+                    font: .system(size: 14, weight: .medium, design: .rounded),
+                    lineSpacing: 4,
+                    textColor: DesignSystem.onSurface,
+                    allowsSelection: true
+                )
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
@@ -245,9 +281,49 @@ struct MacMemoCardView: View {
     }
 }
 
+private extension MemoCardV3 {
+    func hasCustomRichTextFormatting(fontSize: CGFloat) -> Bool {
+        guard let decoded = MemoRichTextCodec.decode(richTextData), decoded.length > 0 else {
+            return false
+        }
+
+        let fullRange = NSRange(location: 0, length: decoded.length)
+        var hasCustomFormatting = false
+
+        decoded.enumerateAttributes(in: fullRange) { attributes, _, stop in
+            if let color = attributes[.foregroundColor] as? NSColor,
+               color != MemoRichTextFactory.plainTextColor {
+                hasCustomFormatting = true
+                stop.pointee = true
+                return
+            }
+
+            if let font = attributes[.font] as? NSFont {
+                let hasBold = font.fontDescriptor.symbolicTraits.contains(.bold)
+                if hasBold {
+                    hasCustomFormatting = true
+                    stop.pointee = true
+                    return
+                }
+            }
+
+            if let paragraphStyle = attributes[.paragraphStyle] as? NSParagraphStyle,
+               paragraphStyle.headIndent > 0 || paragraphStyle.firstLineHeadIndent > 0 {
+                hasCustomFormatting = true
+                stop.pointee = true
+            }
+        }
+
+        return hasCustomFormatting
+    }
+}
+
 struct MemoEditSheet: View {
     @Bindable var memo: MemoCardV3
     @Environment(\.dismiss) private var dismiss
+    @State private var text: String = ""
+    @State private var attributedText: NSAttributedString = MemoRichTextFactory.makeAttributedString(from: "", fontSize: 16)
+    @StateObject private var editorState = MacMemoEditorState()
     
     var body: some View {
         VStack(spacing: 16) {
@@ -255,14 +331,20 @@ struct MemoEditSheet: View {
                 Text("edit_memo")
                     .font(.headline)
                 Spacer()
+                MemoStyleToolbar(editorState: editorState, fontSize: 16)
                 Button("done") {
+                    memo.updateRichContent(attributedText)
                     dismiss()
                 }
             }
             .padding()
             
-            TextEditor(text: $memo.content)
-                .font(.body)
+            MacMemoEditor(
+                text: $text,
+                attributedText: $attributedText,
+                editorState: editorState,
+                fontSize: 16
+            )
                 .padding()
                 .background(DesignSystem.cardBackground)
                 .cornerRadius(8)
@@ -272,11 +354,19 @@ struct MemoEditSheet: View {
         }
         .frame(width: 500, height: 400)
         .background(DesignSystem.softBackground)
+        .onAppear {
+            text = memo.content
+            attributedText = memo.attributedContent(fontSize: 16)
+        }
     }
 }
 
 struct MacMemoEditor: NSViewRepresentable {
     @Binding var text: String
+    @Binding var attributedText: NSAttributedString
+    let editorState: MacMemoEditorState
+    var fontSize: CGFloat = 16
+    var onFocusChange: ((Bool) -> Void)? = nil
     
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
@@ -290,29 +380,32 @@ struct MacMemoEditor: NSViewRepresentable {
         textView.autoresizingMask = [.width]
         textView.delegate = context.coordinator
         textView.drawsBackground = false
+        textView.allowsUndo = true
         
         // Match standard font with rounded design
-        if let descriptor = NSFont.systemFont(ofSize: 16).fontDescriptor.withDesign(.rounded) {
-            textView.font = NSFont(descriptor: descriptor, size: 16)
-        } else {
-            textView.font = .systemFont(ofSize: 16)
-        }
+        textView.font = MemoRichTextFactory.baseFont(size: fontSize)
         
-        textView.isRichText = false
+        textView.isRichText = true
+        textView.importsGraphics = false
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
+        textView.textColor = MemoRichTextFactory.plainTextColor
         textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.lineFragmentPadding = 0
         // Match placeholder top padding (8pt)
         textView.textContainerInset = NSSize(width: 0, height: 8)
+        textView.textStorage?.setAttributedString(attributedText)
         
         scrollView.documentView = textView
+        editorState.textView = textView
         return scrollView
     }
     
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? NSTextView else { return }
-        if textView.string != text {
-            textView.string = text
+        editorState.textView = textView
+        if textView.attributedString() != attributedText {
+            textView.textStorage?.setAttributedString(attributedText)
         }
     }
     
@@ -330,6 +423,69 @@ struct MacMemoEditor: NSViewRepresentable {
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             self.parent.text = textView.string
+            self.parent.attributedText = textView.attributedString()
+        }
+
+        func textDidBeginEditing(_ notification: Notification) {
+            parent.onFocusChange?(true)
+        }
+
+        func textDidEndEditing(_ notification: Notification) {
+            parent.onFocusChange?(false)
+        }
+    }
+}
+
+private struct MemoStyleToolbar: View {
+    @ObservedObject var editorState: MacMemoEditorState
+    let fontSize: CGFloat
+
+    var body: some View {
+        HStack(spacing: 6) {
+            styleButton(systemName: "bold") {
+                editorState.apply(.toggleBold, fontSize: fontSize)
+            }
+
+            Menu {
+                colorButton("默认", color: MemoRichTextFactory.plainTextColor)
+                colorButton("红色", color: .systemRed)
+                colorButton("橙色", color: .systemOrange)
+                colorButton("蓝色", color: .systemBlue)
+                colorButton("绿色", color: .systemGreen)
+            } label: {
+                Image(systemName: "paintpalette")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(DesignSystem.textSecondary)
+                    .frame(width: 24, height: 24)
+                    .background(DesignSystem.softBackground.opacity(0.001))
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+
+            styleButton(systemName: "list.bullet") {
+                editorState.apply(.applyList(.unordered), fontSize: fontSize)
+            }
+
+            styleButton(systemName: "list.number") {
+                editorState.apply(.applyList(.ordered), fontSize: fontSize)
+            }
+        }
+    }
+
+    private func styleButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(DesignSystem.textSecondary)
+                .frame(width: 24, height: 24)
+                .background(DesignSystem.softBackground.opacity(0.001))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func colorButton(_ title: String, color: NSColor) -> some View {
+        Button(title) {
+            editorState.apply(.setColor(color), fontSize: fontSize)
         }
     }
 }

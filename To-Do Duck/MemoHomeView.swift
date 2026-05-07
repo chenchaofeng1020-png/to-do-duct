@@ -202,6 +202,14 @@ struct MemoHomeView: View {
 struct MemoCardView: View {
     let memo: MemoCardV3
     var onTap: () -> Void
+
+    private var decodedRichText: NSAttributedString? {
+        guard let richText = memo.decodedRichTextContent,
+              richText.hasCustomRichTextFormatting else {
+            return nil
+        }
+        return richText
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -224,12 +232,16 @@ struct MemoCardView: View {
                 }
             }
 
-            ExpandableMemoText(
-                content: memo.content,
-                font: .system(size: 14, weight: .medium, design: .rounded),
-                lineSpacing: 4,
-                textColor: DesignSystem.onSurface
-            )
+            if let decodedRichText {
+                ExpandableMemoText(attributedContent: decodedRichText)
+            } else {
+                ExpandableMemoText(
+                    content: memo.content,
+                    font: .system(size: 14, weight: .medium, design: .rounded),
+                    lineSpacing: 4,
+                    textColor: DesignSystem.onSurface
+                )
+            }
         }
         .padding(16)
         .background(
@@ -257,6 +269,87 @@ struct MemoCardView: View {
         return formatter.string(from: date)
     }
 }
+
+private extension MemoCardV3 {
+    var decodedRichTextContent: NSAttributedString? {
+        guard let richTextData, !richTextData.isEmpty else { return nil }
+        return try? NSAttributedString(
+            data: richTextData,
+            options: [.documentType: NSAttributedString.DocumentType.rtf],
+            documentAttributes: nil
+        )
+    }
+}
+
+private extension NSAttributedString {
+    var hasCustomRichTextFormatting: Bool {
+        guard length > 0 else { return false }
+
+        var hasCustomFormatting = false
+        enumerateAttributes(in: NSRange(location: 0, length: length)) { attributes, _, stop in
+            #if canImport(UIKit)
+            if let font = attributes[.font] as? UIFont,
+               font.fontDescriptor.symbolicTraits.contains(.traitBold) {
+                hasCustomFormatting = true
+                stop.pointee = true
+                return
+            }
+            #endif
+
+            if let color = attributes[.foregroundColor],
+               !Self.isDefaultMemoTextColor(color) {
+                hasCustomFormatting = true
+                stop.pointee = true
+                return
+            }
+
+            if let paragraphStyle = attributes[.paragraphStyle] as? NSParagraphStyle,
+               paragraphStyle.headIndent > 0 || paragraphStyle.firstLineHeadIndent > 0 {
+                hasCustomFormatting = true
+                stop.pointee = true
+            }
+        }
+
+        return hasCustomFormatting
+    }
+
+    private static func isDefaultMemoTextColor(_ color: Any) -> Bool {
+        #if canImport(UIKit)
+        guard let uiColor = color as? UIColor else { return false }
+
+        let defaultLight = UIColor(red: 45/255, green: 52/255, blue: 50/255, alpha: 1)
+        let defaultDark = UIColor(red: 224/255, green: 227/255, blue: 225/255, alpha: 1)
+        return uiColor.isClose(to: defaultLight) || uiColor.isClose(to: defaultDark)
+        #else
+        return false
+        #endif
+    }
+}
+
+#if canImport(UIKit)
+private extension UIColor {
+    func isClose(to other: UIColor, tolerance: CGFloat = 0.03) -> Bool {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        var otherRed: CGFloat = 0
+        var otherGreen: CGFloat = 0
+        var otherBlue: CGFloat = 0
+        var otherAlpha: CGFloat = 0
+
+        guard getRed(&red, green: &green, blue: &blue, alpha: &alpha),
+              other.getRed(&otherRed, green: &otherGreen, blue: &otherBlue, alpha: &otherAlpha) else {
+            return false
+        }
+
+        return abs(red - otherRed) <= tolerance
+            && abs(green - otherGreen) <= tolerance
+            && abs(blue - otherBlue) <= tolerance
+            && abs(alpha - otherAlpha) <= tolerance
+    }
+}
+#endif
 
 struct MemoActionSheet: View {
     let memo: MemoCardV3
@@ -483,6 +576,8 @@ struct MemoInputSheet: View {
         
         if let memo = memoToEdit {
             memo.content = trimmedContent
+            memo.richTextData = nil
+            memo.updatedAt = Date()
         } else {
             let newMemo = MemoCardV3(content: trimmedContent)
             modelContext.insert(newMemo)

@@ -232,6 +232,23 @@
     "Close" : {
 
     },
+    "collapse_memo_content" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起"
+          }
+        }
+      }
+    },
     "confirm_continuation" : {
       "localizations" : {
         "en" : {
@@ -309,9 +326,6 @@
 
     },
     "create_today" : {
-
-    },
-    "create_today_hint" : {
 
     },
     "custom_date" : {
@@ -461,38 +475,6 @@
         }
       }
     },
-    "expand_memo_content" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expand"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "展开"
-          }
-        }
-      }
-    },
-    "collapse_memo_content" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collapse"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "收起"
-          }
-        }
-      }
-    },
     "drag_to_reorder" : {
 
     },
@@ -627,6 +609,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输入待办内容"
+          }
+        }
+      }
+    },
+    "expand_memo_content" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展开"
           }
         }
       }
@@ -1978,6 +1977,9 @@
     "当前仅支持本地存储，删除应用后数据将丢失。" : {
 
     },
+    "当天没有备忘" : {
+
+    },
     "待办事项" : {
 
     },
@@ -2009,6 +2011,9 @@
 
     },
     "点击后按下新的全局快捷键，按 Esc 取消" : {
+
+    },
+    "点击编辑月历标题" : {
 
     },
     "确定要删除这张卡片及其所有待办事项吗？此操作不可恢复。" : {

@@ -179,7 +179,7 @@ private struct MacQuickCaptureTextEditor: NSViewRepresentable {
         textView.textContainer?.lineFragmentPadding = 0
         textView.textContainer?.widthTracksTextView = true
         textView.textContainer?.heightTracksTextView = false
-        textView.textColor = .labelColor
+        textView.textColor = DesignSystem.macPrimaryTextColor
         textView.insertionPointColor = NSColor(hex: "0c6d45")
         textView.font = Self.editorFont
 

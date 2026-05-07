@@ -49,14 +49,14 @@ final class QuickCaptureSaveService {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
-    func saveMemo(text: String) throws {
+    func saveMemo(text: String, richTextData: Data? = nil) throws {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             throw QuickCaptureSaveError.emptyText
         }
 
         let context = ModelContext(modelContainer)
-        let memo = MemoCardV3(content: trimmed)
+        let memo = MemoCardV3(content: trimmed, richTextData: richTextData)
         context.insert(memo)
 
         try context.save()

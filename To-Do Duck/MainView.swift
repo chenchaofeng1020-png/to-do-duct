@@ -224,7 +224,7 @@ private struct MacTodoEditTitleTextView: NSViewRepresentable {
         textView.textContainer?.heightTracksTextView = false
         textView.textContainer?.lineFragmentPadding = 0
         textView.textContainerInset = NSSize(width: 0, height: 2)
-        textView.textColor = .labelColor
+        textView.textColor = DesignSystem.macPrimaryTextColor
         textView.insertionPointColor = NSColor(hex: "0c6d45")
         textView.font = Self.editorFont
         textView.string = text
@@ -641,6 +641,10 @@ struct TodoHomeView: View {
     private let autoRefreshMinimumInterval: TimeInterval = 2
     private let widgetReloadMinimumInterval: TimeInterval = 1
 
+    private var defaultContinuationDate: Date {
+        Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+    }
+
     // iPhone 首页用了分页缓存，需要监听底层 SwiftData/CloudKit 变化后主动重载，
     // 否则跨设备同步后的卡片和进度会停留在旧快照。
     private var syncVersion: Int {
@@ -747,8 +751,8 @@ struct TodoHomeView: View {
                             ),
                             onAdd: { text in withAnimation { addItem(text: text, to: card) } },
                             onContinue: { item in
+                                targetDate = defaultContinuationDate
                                 showTargetPickerForItem = item
-                                targetDate = Calendar.current.date(byAdding: .day, value: 1, to: card.date) ?? card.date
                             },
                             onEdit: { item in
                                 menuForItem = item // 点击触发菜单
@@ -875,12 +879,8 @@ struct TodoHomeView: View {
                 try? modelContext.save()
                 WidgetCenter.shared.reloadAllTimelines()
             }, onContinue: {
+                targetDate = defaultContinuationDate
                 showTargetPickerForItem = item
-                if let cardDate = item.card?.date {
-                    targetDate = Calendar.current.date(byAdding: .day, value: 1, to: cardDate) ?? Date()
-                } else {
-                    targetDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
-                }
             })
         }
         .sheet(item: $showTargetPickerForItem) { item in
@@ -1299,9 +1299,13 @@ struct TargetDatePickerSheet: View {
                             .foregroundColor(DesignSystem.textSecondary)
                             .padding(.horizontal, 4)
                         
-                        CustomCalendarView(selectedDate: $targetDate)
-                            .padding(16)
+                        CustomCalendarView(selectedDate: $targetDate, isCompact: true)
+                            .padding(12)
                             .background(DesignSystem.cardBackground)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(DesignSystem.outlineVariant.opacity(0.28), lineWidth: 1)
+                            )
                             .cornerRadius(16)
                             .shadow(color: DesignSystem.shadowColor.opacity(0.5), radius: 8, x: 0, y: 2)
                     }
@@ -1349,6 +1353,9 @@ struct TargetDatePickerSheet: View {
         .background(DesignSystem.softBackground)
         .presentationDetents([.fraction(0.7), .large])
         .presentationCornerRadius(24)
+        .onAppear {
+            targetDate = tomorrowDate
+        }
     }
 }
 

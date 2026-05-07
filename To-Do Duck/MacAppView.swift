@@ -4,6 +4,7 @@ import SwiftUI
 struct MacAppView: View {
     @State private var selectedTab: MacTab? = .todo
     @State private var hoveredTab: MacTab?
+    @State private var selectedDate: Date?
     
     enum MacTab: String, CaseIterable, Identifiable {
         case todo
@@ -31,32 +32,37 @@ struct MacAppView: View {
     
     var body: some View {
         NavigationSplitView {
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(MacTab.allCases) { tab in
-                    Button {
-                        selectedTab = tab
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: tab.icon)
-                                .font(.system(size: 18, weight: .medium))
-                                .frame(width: 22)
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(MacTab.allCases) { tab in
+                        Button {
+                            selectedTab = tab
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: tab.icon)
+                                    .font(.system(size: 18, weight: .medium))
+                                    .frame(width: 22)
 
-                            Text(LocalizedStringKey(tab.title))
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                Text(LocalizedStringKey(tab.title))
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
 
-                            Spacer(minLength: 0)
+                                Spacer(minLength: 0)
+                            }
+                            .foregroundStyle(foregroundColor(for: tab))
+                            .padding(.horizontal, 18)
+                            .frame(height: 40)
+                            .background(backgroundColor(for: tab))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
-                        .foregroundStyle(foregroundColor(for: tab))
-                        .padding(.horizontal, 18)
-                        .frame(height: 40)
-                        .background(backgroundColor(for: tab))
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .onHover { isHovering in
-                        hoveredTab = isHovering ? tab : (hoveredTab == tab ? nil : hoveredTab)
+                        .buttonStyle(.plain)
+                        .onHover { isHovering in
+                            hoveredTab = isHovering ? tab : (hoveredTab == tab ? nil : hoveredTab)
+                        }
                     }
                 }
+                .padding(.bottom, 12)
+
+                Spacer()
             }
             .padding(.horizontal, 12)
             .padding(.top, 16)
@@ -67,9 +73,9 @@ struct MacAppView: View {
             if let selectedTab {
                 switch selectedTab {
                 case .todo:
-                    MacTodoHomeView()
+                    MacTodoHomeView(selectedDate: selectedDate)
                 case .memo:
-                    MacMemoHomeView()
+                    MacMemoHomeView(selectedDate: selectedDate)
                 case .profile:
                     MacProfileView()
                 }
